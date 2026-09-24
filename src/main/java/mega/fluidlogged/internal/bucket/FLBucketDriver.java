@@ -1,34 +1,24 @@
 /*
  * This file is part of FluidLogged.
- *
  * Copyright (C) 2025 The MEGA Team, FalsePattern
  * All Rights Reserved
- *
  * The above copyright notice, this permission notice and the word "MEGA"
  * shall be included in all copies or substantial portions of the Software.
- *
  * FluidLogged is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, only version 3 of the License.
- *
  * FluidLogged is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public License
- * along with FluidLogged.  If not, see <https://www.gnu.org/licenses/>.
+ * along with FluidLogged. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package mega.fluidlogged.internal.bucket;
 
-import lombok.val;
-import mega.fluidlogged.api.bucket.BucketDriver;
-import mega.fluidlogged.api.bucket.BucketEmptyResults;
-import mega.fluidlogged.api.bucket.BucketState;
-import mega.fluidlogged.internal.FLUtil;
-import mega.fluidlogged.api.FLBlockAccess;
-import mega.fluidlogged.internal.world.FLWorldDriver;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
@@ -36,14 +26,20 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.player.FillBucketEvent;
 import net.minecraftforge.fluids.Fluid;
+
 import cpw.mods.fml.common.eventhandler.Event;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-
-import java.util.ArrayList;
-import java.util.List;
+import lombok.val;
+import mega.fluidlogged.api.FLBlockAccess;
+import mega.fluidlogged.api.bucket.BucketDriver;
+import mega.fluidlogged.api.bucket.BucketEmptyResults;
+import mega.fluidlogged.api.bucket.BucketState;
+import mega.fluidlogged.internal.FLUtil;
+import mega.fluidlogged.internal.world.FLWorldDriver;
 
 public class FLBucketDriver {
+
     public static final FLBucketDriver INSTANCE = new FLBucketDriver();
     private final List<BucketDriver.Query> queryDrivers = new ArrayList<>();
     private final List<BucketDriver.Fill> fillDrivers = new ArrayList<>();
@@ -68,9 +64,7 @@ public class FLBucketDriver {
         }
     }
 
-    @SubscribeEvent(
-            priority = EventPriority.HIGHEST
-    )
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onBucketEvent(FillBucketEvent event) {
         val hit = event.target;
         if (hit.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) {
@@ -98,7 +92,7 @@ public class FLBucketDriver {
     }
 
     private ItemStack fillBucket(Fluid fluid, ItemStack bucket) {
-        for (val driver: fillDrivers) {
+        for (val driver : fillDrivers) {
             val item = driver.fillBucket(fluid, bucket);
             if (item != null) {
                 return item;
@@ -108,7 +102,7 @@ public class FLBucketDriver {
     }
 
     private BucketEmptyResults emptyBucket(ItemStack bucket) {
-        for (val driver: emptyDrivers) {
+        for (val driver : emptyDrivers) {
             val pair = driver.emptyBucket(bucket);
             if (pair != null) {
                 return pair;
@@ -118,7 +112,7 @@ public class FLBucketDriver {
     }
 
     private BucketState queryState(ItemStack bucket) {
-        for (val driver: queryDrivers) {
+        for (val driver : queryDrivers) {
             val state = driver.queryState(bucket);
             if (state != null) {
                 return state;
@@ -187,8 +181,7 @@ public class FLBucketDriver {
         val fluid = wlWorld.fl$getFluid(x, y, z);
         if (fluid != null) {
             val newBucket = fillBucket(fluid, bucket);
-            if (newBucket == null)
-                return null;
+            if (newBucket == null) return null;
             wlWorld.fl$setFluid(x, y, z, null);
             val block = world.getBlock(x, y, z);
             world.notifyBlocksOfNeighborChange(x, y, z, block);

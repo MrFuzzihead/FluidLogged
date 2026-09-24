@@ -1,32 +1,24 @@
 /*
  * This file is part of FluidLogged.
- *
  * Copyright (C) 2025 The MEGA Team, FalsePattern
  * All Rights Reserved
- *
  * The above copyright notice, this permission notice and the word "MEGA"
  * shall be included in all copies or substantial portions of the Software.
- *
  * FluidLogged is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, only version 3 of the License.
- *
  * FluidLogged is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public License
- * along with FluidLogged.  If not, see <https://www.gnu.org/licenses/>.
+ * along with FluidLogged. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package mega.fluidlogged.internal;
 
-import lombok.val;
-import mega.fluidlogged.api.FLBlockAccess;
-import mega.fluidlogged.internal.mixin.hook.FLWorld;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import java.util.Random;
+import java.util.function.Consumer;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDynamicLiquid;
@@ -45,37 +37,37 @@ import net.minecraftforge.fluids.BlockFluidClassic;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
-import cpw.mods.fml.common.eventhandler.Event;
 
-import java.util.Random;
-import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import cpw.mods.fml.common.eventhandler.Event;
+import lombok.val;
+import mega.fluidlogged.api.FLBlockAccess;
+import mega.fluidlogged.internal.mixin.hook.FLWorld;
 
 public class FLUtil {
+
     public static Block getFluidOrBlock(IBlockAccess access, int x, int y, int z) {
-        if (!(access instanceof FLBlockAccess))
-            return access.getBlock(x, y, z);
-        val fluid = ((FLBlockAccess)access).fl$getFluid(x, y, z);
-        if (fluid == null)
-            return access.getBlock(x, y, z);
+        if (!(access instanceof FLBlockAccess)) return access.getBlock(x, y, z);
+        val fluid = ((FLBlockAccess) access).fl$getFluid(x, y, z);
+        if (fluid == null) return access.getBlock(x, y, z);
         val block = fluid.getBlock();
-        if (block == null)
-            return access.getBlock(x, y, z);
+        if (block == null) return access.getBlock(x, y, z);
         return block;
     }
 
     public static int getFluidMeta(IBlockAccess access, int x, int y, int z, int max) {
-        if (!(access instanceof FLBlockAccess))
-            return access.getBlockMetadata(x, y, z);
-        val fluid = ((FLBlockAccess)access).fl$getFluid(x, y, z);
-        if (fluid == null)
-            return access.getBlockMetadata(x, y, z);
+        if (!(access instanceof FLBlockAccess)) return access.getBlockMetadata(x, y, z);
+        val fluid = ((FLBlockAccess) access).fl$getFluid(x, y, z);
+        if (fluid == null) return access.getBlockMetadata(x, y, z);
         val block = fluid.getBlock();
-        if (block == null)
-            return access.getBlockMetadata(x, y, z);
+        if (block == null) return access.getBlockMetadata(x, y, z);
         return max;
     }
 
-    public static void fireBucketEvent(ItemStack item, World world, EntityPlayer player, Consumer<ItemStack> resultCallback, MovingObjectPosition pos) {
+    public static void fireBucketEvent(ItemStack item, World world, EntityPlayer player,
+        Consumer<ItemStack> resultCallback, MovingObjectPosition pos) {
         val event = new FillBucketEvent(player, item, world, pos);
         if (MinecraftForge.EVENT_BUS.post(event)) {
             resultCallback.accept(item);
@@ -103,18 +95,18 @@ public class FLUtil {
         resultCallback.accept(item);
     }
 
-    public static void onFluidPlacedInto(@NotNull World world, int x, int y, int z, @NotNull Block block, @NotNull Block fluidBlock) {
+    public static void onFluidPlacedInto(@NotNull World world, int x, int y, int z, @NotNull Block block,
+        @NotNull Block fluidBlock) {
         if (fluidBlock instanceof BlockLiquid) {
-            ((FLWorld)world).fl$scheduleFluidUpdate(x, y, z, block, fluidBlock.tickRate(world));
+            ((FLWorld) world).fl$scheduleFluidUpdate(x, y, z, block, fluidBlock.tickRate(world));
         } else if (fluidBlock instanceof IFluidBlock) {
-            ((FLWorld)world).fl$scheduleFluidUpdate(x, y, z, block, fluidBlock.tickRate(world));
+            ((FLWorld) world).fl$scheduleFluidUpdate(x, y, z, block, fluidBlock.tickRate(world));
         }
     }
 
     public static void simulate(@NotNull World world, int x, int y, int z, @NotNull Random random, Fluid fluid) {
         val block = fluid.getBlock();
-        if (block == null)
-            return;
+        if (block == null) return;
         if (block instanceof BlockLiquid) {
             val simBlock = resolveVanillaSimulationLiquid(block);
             if (simBlock != null) {

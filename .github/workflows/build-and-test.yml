@@ -1,17 +1,13 @@
+
 name: Build and test
 
 on:
   pull_request:
-    branches:
-      - master
+    branches: [ master, main ]
   push:
-    branches:
-      - master
+    branches: [ master, main ]
 
 jobs:
   build-and-test:
-    uses: FalsePattern/fpgradle-workflows/.github/workflows/build-and-test.yml@master
-    with:
-      timeout: 90
-      workspace: setupCIWorkspace
-      client-only: false
+    uses: GTNewHorizons/GTNH-Actions-Workflows/.github/workflows/build-and-test.yml@master
+    secrets: inherit
