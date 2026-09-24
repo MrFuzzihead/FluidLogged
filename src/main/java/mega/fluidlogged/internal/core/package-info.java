@@ -15,5 +15,5 @@
  * along with FluidLogged. If not, see <https://www.gnu.org/licenses/>.
  */
 
-@ApiStatus.Internal
+@org.jetbrains.annotations.ApiStatus.Internal
 package mega.fluidlogged.internal.core;

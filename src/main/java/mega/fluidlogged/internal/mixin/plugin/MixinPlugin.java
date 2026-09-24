@@ -24,12 +24,12 @@ import com.falsepattern.lib.mixin.IMixinPlugin;
 import com.falsepattern.lib.mixin.ITargetedMod;
 
 import lombok.Getter;
-import mega.fluidlogged.Tags;
+import mega.fluidlogged.FLConstants;
 
 public class MixinPlugin implements IMixinPlugin {
 
     @Getter
-    private final Logger logger = IMixinPlugin.createLogger(Tags.MOD_NAME);
+    private final Logger logger = IMixinPlugin.createLogger(FLConstants.MOD_NAME);
 
     @Override
     public ITargetedMod[] getTargetedModEnumValues() {

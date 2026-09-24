@@ -41,6 +41,7 @@ import com.falsepattern.chunk.api.DataManager;
 import gnu.trove.list.array.TIntArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
+import mega.fluidlogged.FLConstants;
 import mega.fluidlogged.Tags;
 import mega.fluidlogged.api.FLChunk;
 import mega.fluidlogged.internal.mixin.hook.FLPacket;
@@ -267,7 +268,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
 
     @Override
     public @NotNull String version() {
-        return Tags.MOD_VERSION;
+        return Tags.VERSION;
     }
 
     @Override
@@ -287,7 +288,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
 
     @Override
     public String domain() {
-        return Tags.MOD_ID;
+        return FLConstants.MOD_ID;
     }
 
     @Override

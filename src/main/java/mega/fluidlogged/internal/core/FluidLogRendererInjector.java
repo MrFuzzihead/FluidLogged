@@ -32,13 +32,13 @@ import com.falsepattern.lib.turboasm.TurboClassTransformer;
 
 import lombok.SneakyThrows;
 import lombok.val;
-import mega.fluidlogged.Tags;
+import mega.fluidlogged.FLConstants;
 
 /**
  * Waterlogging renderer hook
  *
  * Injection point:
- * 
+ *
  * <pre>
  * {@code
  *    <------------ here
@@ -54,9 +54,9 @@ import mega.fluidlogged.Tags;
  * </pre>
  *
  * Injected code snippet:
- * 
+ *
  * <pre>
- * 
+ *
  * {
  *     &#64;code
  *     int tmp = ASMHooks.drawFluidLogged(renderblocks, x, y, z, pass);
@@ -69,7 +69,7 @@ public class FluidLogRendererInjector implements TurboClassTransformer {
 
     @Override
     public String owner() {
-        return Tags.MOD_ID;
+        return FLConstants.MOD_ID;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class FluidLogRendererInjector implements TurboClassTransformer {
             iter.add(
                 new MethodInsnNode(
                     Opcodes.INVOKESTATIC,
-                    Tags.ROOT_PKG.replace('.', '/') + "/internal/core/ASMHooks",
+                    FLConstants.ROOT_PKG.replace('.', '/') + "/internal/core/ASMHooks",
                     "drawFluidLogged",
                     "(Lnet/minecraft/client/renderer/RenderBlocks;IIII)I",
                     false));

@@ -36,7 +36,7 @@ public interface WorldDriver {
 
     /**
      * Check whether a given block can be fluidlogged by a fluid.
-     * 
+     *
      * @param block The block to check
      * @param meta  The checked block's metadata
      * @param fluid The fluid that is trying to fluidlog the block

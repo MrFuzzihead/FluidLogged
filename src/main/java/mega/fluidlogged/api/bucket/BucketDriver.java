@@ -62,7 +62,7 @@ public interface BucketDriver {
 
         /**
          * Fills the given empty bucket with a fluid
-         * 
+         *
          * @param fluid  The fluid to fill the bucket with
          * @param bucket The bucket to fill
          * @return The filled bucket
@@ -80,7 +80,7 @@ public interface BucketDriver {
 
         /**
          * Empties a fluid out of the given bucket
-         * 
+         *
          * @param bucket The bucket to empty out
          * @return The empty bucket and its fluid
          * @implSpec Return null if this driver cannot empty the given bucket.
@@ -91,7 +91,7 @@ public interface BucketDriver {
 
     /**
      * Register the provided driver.
-     * 
+     *
      * @implSpec The driver must implement at least one of {@link Query}, {@link Fill}, or {@link Empty}, or this method
      *           throws an exception.
      */

@@ -23,6 +23,7 @@ import com.falsepattern.chunk.api.DataRegistry;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import mega.fluidlogged.FLConstants;
 import mega.fluidlogged.Tags;
 import mega.fluidlogged.api.bucket.BucketDriver;
 import mega.fluidlogged.api.world.WorldDriver;
@@ -31,9 +32,9 @@ import mega.fluidlogged.internal.bucket.drivers.ForgeBucketDriver;
 import mega.fluidlogged.internal.world.drivers.MinecraftWorldDriver;
 
 @Mod(
-    modid = Tags.MOD_ID,
-    version = Tags.MOD_VERSION,
-    name = Tags.MOD_NAME,
+    modid = FLConstants.MOD_ID,
+    version = Tags.VERSION,
+    name = FLConstants.MOD_NAME,
     acceptedMinecraftVersions = "[1.7.10]",
     dependencies = "required-after:chunkapi@[0.6.4,);" + "required-after:falsepatternlib@[1.7.0,);")
 public class FluidLogged {

@@ -21,18 +21,18 @@ import java.util.Map;
 
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
-import mega.fluidlogged.Tags;
+import mega.fluidlogged.FLConstants;
 
 @IFMLLoadingPlugin.MCVersion("1.7.10")
-@IFMLLoadingPlugin.Name(Tags.MOD_ID)
-@IFMLLoadingPlugin.TransformerExclusions(Tags.ROOT_PKG + ".internal.core")
+@IFMLLoadingPlugin.Name(FLConstants.MOD_ID)
+@IFMLLoadingPlugin.TransformerExclusions(FLConstants.ROOT_PKG + ".internal.core")
 public class CoreLoadingPlugin implements IFMLLoadingPlugin {
 
     @Override
     public String[] getASMTransformerClass() {
         if (FMLLaunchHandler.side()
             .isClient()) {
-            return new String[] { Tags.ROOT_PKG + ".internal.core.FluidLogTransformer" };
+            return new String[] { FLConstants.ROOT_PKG + ".internal.core.FluidLogTransformer" };
         } else {
             return new String[0];
         }
