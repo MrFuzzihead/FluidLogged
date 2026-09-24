@@ -47,4 +47,12 @@ public abstract class RenderBlocksMixin {
     private int hijackMeta(IBlockAccess instance, int x, int y, int z) {
         return FLUtil.getFluidMeta(instance, x, y, z, 0);
     }
+
+    @Redirect(
+        method = "renderBlockLiquid",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/IBlockAccess;getBlockMetadata(III)I"),
+        require = 1)
+    private int renderBlockLiquidMeta(IBlockAccess instance, int x, int y, int z) {
+        return FLUtil.getFluidMeta(instance, x, y, z, 0);
+    }
 }

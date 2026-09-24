@@ -17,7 +17,7 @@
 
 package mega.fluidlogged.internal.core;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import com.falsepattern.lib.turboasm.MergeableTurboTransformer;
@@ -26,7 +26,7 @@ import com.falsepattern.lib.turboasm.TurboClassTransformer;
 public class FluidLogTransformer extends MergeableTurboTransformer {
 
     private static List<TurboClassTransformer> transformers() {
-        return Collections.singletonList(new FluidLogRendererInjector());
+        return Arrays.asList(new FluidLogRendererInjector(), new AngelicaFluidLogRendererInjector());
     }
 
     public FluidLogTransformer() {
