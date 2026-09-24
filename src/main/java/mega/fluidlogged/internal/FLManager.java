@@ -1,39 +1,24 @@
 /*
  * This file is part of FluidLogged.
- *
  * Copyright (C) 2025 The MEGA Team, FalsePattern
  * All Rights Reserved
- *
  * The above copyright notice, this permission notice and the word "MEGA"
  * shall be included in all copies or substantial portions of the Software.
- *
  * FluidLogged is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, only version 3 of the License.
- *
  * FluidLogged is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public License
- * along with FluidLogged.  If not, see <https://www.gnu.org/licenses/>.
+ * along with FluidLogged. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package mega.fluidlogged.internal;
 
-import com.falsepattern.chunk.api.ArrayUtil;
-import com.falsepattern.chunk.api.DataManager;
-import gnu.trove.list.array.TIntArrayList;
-import lombok.RequiredArgsConstructor;
-import lombok.val;
-import mega.fluidlogged.Tags;
-import mega.fluidlogged.api.FLChunk;
-import mega.fluidlogged.internal.mixin.hook.FLPacket;
-import mega.fluidlogged.internal.mixin.hook.FLSubChunk;
-import mega.fluidlogged.internal.mixin.hook.FLWorld;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
@@ -47,18 +32,34 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
-import java.nio.ByteBuffer;
-import java.util.BitSet;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class FLManager implements DataManager.PacketDataManager, DataManager.ChunkDataManager, DataManager.SubChunkDataManager, DataManager.BlockPacketDataManager {
+import com.falsepattern.chunk.api.ArrayUtil;
+import com.falsepattern.chunk.api.DataManager;
+
+import gnu.trove.list.array.TIntArrayList;
+import lombok.RequiredArgsConstructor;
+import lombok.val;
+import mega.fluidlogged.Tags;
+import mega.fluidlogged.api.FLChunk;
+import mega.fluidlogged.internal.mixin.hook.FLPacket;
+import mega.fluidlogged.internal.mixin.hook.FLSubChunk;
+import mega.fluidlogged.internal.mixin.hook.FLWorld;
+
+public class FLManager implements DataManager.PacketDataManager, DataManager.ChunkDataManager,
+    DataManager.SubChunkDataManager, DataManager.BlockPacketDataManager {
+
     private static final int SUB_CHUNK_COUNT = 16;
     private static final int BLOCKS_PER_SUB_CHUNK = 16 * 16 * 16;
     private static final int BITS_PER_BYTE = 8;
     private static final int BITS_PER_INT = BITS_PER_BYTE * 4;
     private static final int BITS_PER_BLOCK = BITS_PER_INT + 1;
     private static final int EXTRA_BITS_PER_SUB_CHUNK = BITS_PER_INT * 3 + BITS_PER_BYTE;
-    private static final int BITS_PER_CHUNK = SUB_CHUNK_COUNT * (BLOCKS_PER_SUB_CHUNK * BITS_PER_BLOCK + EXTRA_BITS_PER_SUB_CHUNK);
+    private static final int BITS_PER_CHUNK = SUB_CHUNK_COUNT
+        * (BLOCKS_PER_SUB_CHUNK * BITS_PER_BLOCK + EXTRA_BITS_PER_SUB_CHUNK);
     private static final int BYTES_PER_CHUNK = BITS_PER_CHUNK / BITS_PER_BYTE;
+
     @Override
     public int maxPacketSize() {
         return BYTES_PER_CHUNK;
@@ -67,22 +68,19 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
     @Override
     public void writeChunkToNBT(Chunk chunk, NBTTagCompound nbt) {
         val world = chunk.worldObj;
-        val fl$world = (FLWorld)world;
+        val fl$world = (FLWorld) world;
         val updates = fl$world.fl$getPendingFluidUpdates(chunk, false);
         if (updates == null) {
             return;
         }
         long time = world.getTotalWorldTime();
         val nbtList = new NBTTagList();
-        for (val update: updates) {
-            nbtList.appendTag(new NBTTagIntArray(new int[]{
-                    update.xCoord,
-                    update.yCoord,
-                    update.zCoord,
-                    Block.getIdFromBlock(update.func_151351_a()),
-                    (int) (update.scheduledTime - time),
-                    update.priority
-            }));
+        for (val update : updates) {
+            nbtList.appendTag(
+                new NBTTagIntArray(
+                    new int[] { update.xCoord, update.yCoord, update.zCoord,
+                        Block.getIdFromBlock(update.func_151351_a()), (int) (update.scheduledTime - time),
+                        update.priority }));
         }
         nbt.setByte("v", (byte) 1);
         nbt.setTag("FluidTicks", nbtList);
@@ -100,7 +98,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         if (nbtList == null) {
             return;
         }
-        val fl$world = (FLWorld)chunk.worldObj;
+        val fl$world = (FLWorld) chunk.worldObj;
         val count = nbtList.tagCount();
         for (int i = 0; i < count; i++) {
             val entry = nbtList.func_150306_c(i);
@@ -115,9 +113,11 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
 
     @RequiredArgsConstructor
     private static class FluidIDList {
+
         public final @NotNull BitSet presence;
         public final int @NotNull [] ids;
     }
+
     private static @Nullable FluidIDList serialize(Fluid @NotNull [] fluids) {
         BitSet presence = null;
         val ids = new TIntArrayList();
@@ -138,8 +138,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
             presence.set(i);
             ids.add(Block.getIdFromBlock(block));
         }
-        if (presence == null)
-            return null;
+        if (presence == null) return null;
         return new FluidIDList(presence, ids.toArray());
     }
 
@@ -181,16 +180,16 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
                     }
                     val flState = serialize(fl);
                     if (flState == null) {
-                        buffer.put((byte)0);
+                        buffer.put((byte) 0);
                         continue;
                     }
-                    buffer.put((byte)1);
+                    buffer.put((byte) 1);
                     buffer.putInt(fl.length);
                     val presenceBytes = flState.presence.toByteArray();
                     buffer.putInt(presenceBytes.length);
                     buffer.putInt(flState.ids.length);
                     buffer.put(presenceBytes);
-                    for (val id: flState.ids) {
+                    for (val id : flState.ids) {
                         buffer.putInt(id);
                     }
                 }
@@ -247,7 +246,8 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
     @Override
     public void readSubChunkFromNBT(Chunk chunk, ExtendedBlockStorage subChunk, NBTTagCompound nbt) {
         val flSubChunk = (FLSubChunk) subChunk;
-        if (!nbt.hasKey("fl$len", Constants.NBT.TAG_INT) || !nbt.hasKey("fl$pres", Constants.NBT.TAG_BYTE_ARRAY) || !nbt.hasKey("fl$ids", Constants.NBT.TAG_INT_ARRAY)) {
+        if (!nbt.hasKey("fl$len", Constants.NBT.TAG_INT) || !nbt.hasKey("fl$pres", Constants.NBT.TAG_BYTE_ARRAY)
+            || !nbt.hasKey("fl$ids", Constants.NBT.TAG_INT_ARRAY)) {
             flSubChunk.fl$setFluidLog(null);
             return;
         }
@@ -297,17 +297,17 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
 
     @Override
     public void writeBlockToPacket(Chunk chunk, int x, int y, int z, S23PacketBlockChange packet) {
-        ((FLPacket)packet).fl$setFluidLog(((FLChunk)chunk).fl$getFluid(x, y, z));
+        ((FLPacket) packet).fl$setFluidLog(((FLChunk) chunk).fl$getFluid(x, y, z));
     }
 
     @Override
     public void readBlockFromPacket(Chunk chunk, int x, int y, int z, S23PacketBlockChange packet) {
-        ((FLChunk)chunk).fl$setFluid(x, y, z, ((FLPacket)packet).fl$getFluidLog());
+        ((FLChunk) chunk).fl$setFluid(x, y, z, ((FLPacket) packet).fl$getFluidLog());
     }
 
     @Override
     public void writeBlockPacketToBuffer(S23PacketBlockChange packet, PacketBuffer buffer) {
-        val fluid = ((FLPacket)packet).fl$getFluidLog();
+        val fluid = ((FLPacket) packet).fl$getFluidLog();
         if (fluid == null) {
             buffer.writeBoolean(false);
             return;
