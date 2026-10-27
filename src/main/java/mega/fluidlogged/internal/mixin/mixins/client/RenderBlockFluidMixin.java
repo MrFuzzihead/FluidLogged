@@ -61,7 +61,7 @@ public abstract class RenderBlockFluidMixin {
         remap = false,
         require = 1)
     private float fluidHeightQuanta(BlockFluidBase instance, IBlockAccess world, int x, int y, int z) {
-        if (((FLBlockAccess) world).fl$isFluidLogged(x, y, z, null)) {
+        if (world instanceof FLBlockAccess && ((FLBlockAccess) world).fl$isFluidLogged(x, y, z, null)) {
             return 1;
         }
         return instance.getQuantaPercentage(world, x, y, z);
