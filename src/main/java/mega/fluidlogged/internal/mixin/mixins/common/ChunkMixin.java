@@ -48,8 +48,14 @@ public abstract class ChunkMixin implements FLChunk {
     @Shadow
     public abstract Block getBlock(int posX, int posY, int posZ);
 
+    @Unique
+    private boolean fl$hasFluid;
+    @Unique
+    private boolean fl$hasFluidKnown;
+
     @Override
     public @Nullable Fluid fl$getFluid(int x, int y, int z) {
+        if (!fl$hasFluid()) return null;
         val Y = y >> 4;
         if (Y < 0) return null;
         val subChunks = getBlockStorageArray();
@@ -72,7 +78,39 @@ public abstract class ChunkMixin implements FLChunk {
         val subChunk = subChunks[Y];
         if (subChunk == null) return;
         ((FLSubChunk) subChunk).fl$setFluid(x, y & 0xf, z, fluid);
+        if (fluid != null) {
+            fl$hasFluid = true;
+            fl$hasFluidKnown = true;
+        } else {
+            fl$hasFluidKnown = false;
+        }
         isModified = true;
+    }
+
+    @Override
+    public boolean fl$hasFluid() {
+        if (!fl$hasFluidKnown) {
+            fl$hasFluid = computeHasFluid();
+            fl$hasFluidKnown = true;
+        }
+        return fl$hasFluid;
+    }
+
+    @Override
+    public void fl$invalidateHasFluid() {
+        fl$hasFluidKnown = false;
+    }
+
+    @Unique
+    private boolean computeHasFluid() {
+        val subChunks = getBlockStorageArray();
+        if (subChunks == null) return false;
+        for (val subChunk : subChunks) {
+            if (subChunk != null && ((FLSubChunk) subChunk).fl$hasFluid()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Inject(method = "func_150807_a", at = @At("HEAD"), require = 1)

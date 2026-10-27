@@ -202,6 +202,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
     @Override
     public void readFromBuffer(Chunk chunk, int subChunkMask, boolean forceUpdate, ByteBuffer buffer) {
         val subChunks = chunk.getBlockStorageArray();
+        boolean fluidDataChanged = false;
         for (int i = 0; i < subChunks.length; i++) {
             if ((subChunkMask & (1 << i)) != 0) {
                 val subChunk = subChunks[i];
@@ -209,6 +210,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
                     val wlSubChunk = (FLSubChunk) subChunk;
                     if (buffer.get() == (byte) 0) {
                         wlSubChunk.fl$setFluidLog(null);
+                        fluidDataChanged = true;
                         continue;
                     }
                     val length = buffer.getInt();
@@ -224,8 +226,12 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
                     }
                     val arr = deserialize(length, presence, ids);
                     wlSubChunk.fl$setFluidLog(arr);
+                    fluidDataChanged = true;
                 }
             }
+        }
+        if (fluidDataChanged) {
+            ((FLChunk) chunk).fl$invalidateHasFluid();
         }
     }
 
@@ -251,6 +257,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         if (!nbt.hasKey("fl$len", Constants.NBT.TAG_INT) || !nbt.hasKey("fl$pres", Constants.NBT.TAG_BYTE_ARRAY)
             || !nbt.hasKey("fl$ids", Constants.NBT.TAG_INT_ARRAY)) {
             flSubChunk.fl$setFluidLog(null);
+            ((FLChunk) chunk).fl$invalidateHasFluid();
             return;
         }
         val len = nbt.getInteger("fl$len");
@@ -258,6 +265,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         val ids = nbt.getIntArray("fl$ids");
         val deserialized = deserialize(len, presence, ids);
         flSubChunk.fl$setFluidLog(deserialized);
+        ((FLChunk) chunk).fl$invalidateHasFluid();
     }
 
     @Override

@@ -25,6 +25,7 @@ import net.minecraftforge.fluids.Fluid;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 
 import lombok.val;
 import mega.fluidlogged.api.FLBlockAccess;
@@ -42,8 +43,19 @@ public abstract class ChunkCacheMixin implements FLBlockAccess {
     @Shadow
     private int chunkZ;
 
+    @Unique
+    private boolean fl$hasAnyFluid;
+    @Unique
+    private boolean fl$hasAnyFluidKnown;
+
     @Override
     public void fl$setFluid(int x, int y, int z, @Nullable Fluid fluid) {
+        if (fluid != null) {
+            fl$hasAnyFluid = true;
+            fl$hasAnyFluidKnown = true;
+        } else {
+            fl$hasAnyFluidKnown = false;
+        }
         int cX = (x >> 4) - this.chunkX;
         int cZ = (z >> 4) - this.chunkZ;
         if (cX < 0 || cZ < 0 || cX >= chunkArray.length) {
@@ -60,6 +72,7 @@ public abstract class ChunkCacheMixin implements FLBlockAccess {
 
     @Override
     public @Nullable Fluid fl$getFluid(int x, int y, int z) {
+        if (!fl$hasAnyFluid()) return null;
         int cX = (x >> 4) - this.chunkX;
         int cZ = (z >> 4) - this.chunkZ;
         if (cX < 0 || cZ < 0 || cX >= chunkArray.length) {
@@ -72,5 +85,25 @@ public abstract class ChunkCacheMixin implements FLBlockAccess {
         val chunk = slice[cZ];
         if (chunk == null || chunk instanceof EmptyChunk) return null;
         return ((FLChunk) chunk).fl$getFluid(x & 0xF, y, z & 0xF);
+    }
+
+    @Unique
+    private boolean fl$hasAnyFluid() {
+        if (!fl$hasAnyFluidKnown) {
+            fl$hasAnyFluid = false;
+            fl$hasAnyFluidKnown = true;
+            if (chunkArray != null) {
+                for (val slices : chunkArray) {
+                    if (slices == null) continue;
+                    for (val chunk : slices) {
+                        if (chunk != null && ((FLChunk) chunk).fl$hasFluid()) {
+                            fl$hasAnyFluid = true;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return fl$hasAnyFluid;
     }
 }
