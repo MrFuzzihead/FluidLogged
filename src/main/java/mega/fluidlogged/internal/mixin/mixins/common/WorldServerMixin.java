@@ -238,7 +238,7 @@ public abstract class WorldServerMixin extends World implements FLWorld {
         val entry = new NextTickListEntry(x, y, z, block);
         entry.setPriority(priority);
         if (block.getMaterial() != Material.air) {
-            entry.setScheduledTime((long) priority + worldInfo.getWorldTotalTime());
+            entry.setScheduledTime((long) delay + worldInfo.getWorldTotalTime());
         }
         if (!fl$pendingTicksUnSored.contains(entry)) {
             fl$pendingTicksUnSored.add(entry);

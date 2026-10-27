@@ -96,7 +96,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         if (!nbt.hasKey("FluidTicks", Constants.NBT.TAG_LIST)) {
             return;
         }
-        val nbtList = nbt.getTagList("FluidTicks", Constants.NBT.TAG_COMPOUND);
+        val nbtList = nbt.getTagList("FluidTicks", Constants.NBT.TAG_INT_ARRAY);
         if (nbtList == null) {
             return;
         }
