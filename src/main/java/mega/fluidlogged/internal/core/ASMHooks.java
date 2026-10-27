@@ -36,7 +36,24 @@ public class ASMHooks {
     public static final int BIT_NEXT_PASS = 0b1;
     public static final int BIT_RENDERED_ANYTHING = 0b10;
 
+    private static final int MAX_RENDER_PASSES = 2;
+
     private static final ThreadLocal<Boolean> ANGELICA_RENDERING_FLUID = new ThreadLocal<>();
+
+    // Angelica's renderBlock is looked up once per target class instead of once per block. The lookup walks the
+    // concrete class hierarchy (so subclass overrides win) and validates the shape of the method before caching it.
+    private static final ClassValue<Method> ANGELICA_RENDER_BLOCK = new ClassValue<Method>() {
+
+        @Override
+        protected Method computeValue(Class<?> type) {
+            Method method = findAngelicaRenderBlock(type);
+            if (method == null) {
+                throw new IllegalStateException("Unable to find Angelica renderBlock method on " + type.getName());
+            }
+            method.setAccessible(true);
+            return method;
+        }
+    };
 
     public static int drawFluidLogged(RenderBlocks renderBlocks, int x, int y, int z, int pass) {
 
@@ -77,54 +94,85 @@ public class ASMHooks {
             return;
         }
 
-        Object[] args = { block, metadata, x, y, z, pass, tessellator, renderBlocks, buffers, buildContext,
-            blockRenderContext, originX, originY, originZ, materialOverride, isShaderPackOverride, teMap, currentTick };
+        int fluidPass = getFluidRenderPass(fluidBlock);
+        if (fluidPass < 0) {
+            return;
+        }
+
         int fluidMetadata = fluidBlock instanceof BlockFluidBase
             ? ((BlockFluidBase) fluidBlock).getMaxRenderHeightMeta()
             : 0;
 
+        // Let Angelica select the material from the fluid's own render pass instead of inheriting a host
+        // shader-pack override.
+        Object[] fluidArgs = { fluidBlock, fluidMetadata, x, y, z, fluidPass, tessellator, renderBlocks, buffers,
+            buildContext, blockRenderContext, originX, originY, originZ, null, false, teMap, currentTick };
+
+        // NOTE: a host that Angelica defers is rendered once per host pass on the main thread, so this can still
+        // emit the fluid once per host invocation for those blocks. Cross-pass dedupe belongs with the deferred
+        // prescan work, where the fluid's thread-safety is also considered.
         ANGELICA_RENDERING_FLUID.set(Boolean.TRUE);
         try {
-            for (int fluidPass = 0; fluidPass < 2; fluidPass++) {
-                if (!fluidBlock.canRenderInPass(fluidPass)) {
-                    continue;
-                }
-                Object[] fluidArgs = args.clone();
-                fluidArgs[0] = fluidBlock;
-                fluidArgs[1] = fluidMetadata;
-                fluidArgs[5] = fluidPass;
-                // Let Angelica select the material from the fluid's own render pass instead of inheriting a host
-                // shader-pack override.
-                fluidArgs[14] = null;
-                fluidArgs[15] = false;
-                invokeAngelicaRenderBlock(target, fluidArgs);
-            }
+            invokeAngelicaRenderBlock(target, fluidArgs);
         } finally {
             ANGELICA_RENDERING_FLUID.remove();
         }
     }
 
-    private static void invokeAngelicaRenderBlock(Object target, Object[] args) {
-        Class<?> type = target.getClass();
-        while (type != null) {
-            for (Method method : type.getDeclaredMethods()) {
-                if (!method.getName()
-                    .equals("renderBlock") || method.getParameterTypes().length != args.length) {
-                    continue;
-                }
-                try {
-                    method.setAccessible(true);
-                    method.invoke(target, args);
-                    return;
-                } catch (IllegalAccessException e) {
-                    throw new IllegalStateException("Unable to access Angelica renderBlock", e);
-                } catch (InvocationTargetException e) {
-                    rethrowAngelica(e.getCause());
+    private static int getFluidRenderPass(Block fluidBlock) {
+        int pass = fluidBlock.getRenderBlockPass();
+        if (fluidBlock.canRenderInPass(pass)) {
+            return pass;
+        }
+        // A few renderers claim support for passes other than their primary one.
+        for (int candidate = 0; candidate < MAX_RENDER_PASSES; candidate++) {
+            if (fluidBlock.canRenderInPass(candidate)) {
+                return candidate;
+            }
+        }
+        return -1;
+    }
+
+    private static Method findAngelicaRenderBlock(Class<?> type) {
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            for (Method method : current.getDeclaredMethods()) {
+                if (isAngelicaRenderBlock(method)) {
+                    return method;
                 }
             }
-            type = type.getSuperclass();
         }
-        throw new IllegalStateException("Unable to find Angelica renderBlock method");
+        return null;
+    }
+
+    private static boolean isAngelicaRenderBlock(Method method) {
+        if (!"renderBlock".equals(method.getName())) {
+            return false;
+        }
+        Class<?>[] parameters = method.getParameterTypes();
+        return parameters.length == 18 && parameters[0] == Block.class
+            && parameters[1] == int.class
+            && parameters[2] == int.class
+            && parameters[3] == int.class
+            && parameters[4] == int.class
+            && parameters[5] == int.class
+            && parameters[6] == Tessellator.class
+            && parameters[7] == RenderBlocks.class
+            && parameters[11] == int.class
+            && parameters[12] == int.class
+            && parameters[13] == int.class
+            && parameters[15] == boolean.class
+            && parameters[17] == long.class;
+    }
+
+    private static void invokeAngelicaRenderBlock(Object target, Object[] args) {
+        try {
+            ANGELICA_RENDER_BLOCK.get(target.getClass())
+                .invoke(target, args);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Unable to access Angelica renderBlock", e);
+        } catch (InvocationTargetException e) {
+            rethrowAngelica(e.getCause());
+        }
     }
 
     private static void rethrowAngelica(Throwable throwable) {
