@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum TargetedMod implements ITargetedMod {
 
+    ANGELICA("Angelica 2.1/2.2", false, name -> name.matches("angelica-2\\.[12]\\..*")),
     COFHCORE("CoFH Core", false, contains("cofhcore")),;
 
     @Getter

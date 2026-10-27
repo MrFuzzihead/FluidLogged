@@ -46,6 +46,7 @@ public enum Mixin implements IMixin {
     common_WorldServerMixin(Side.COMMON, always(), "WorldServerMixin"),
 
     client_ActiveRenderInfoMixin(Side.CLIENT, always(), "ActiveRenderInfoMixin"),
+    client_AngelicaRenderBlockMixin(Side.CLIENT, require(TargetedMod.ANGELICA), "AngelicaRenderBlockMixin"),
     client_BlockFluidBaseMixin(Side.CLIENT, always(), "BlockFluidBaseMixin"),
     client_BlockLiquidMixin(Side.CLIENT, always(), "BlockLiquidMixin"),
     client_RenderBlockFluidMixin(Side.CLIENT, always(), "RenderBlockFluidMixin"),

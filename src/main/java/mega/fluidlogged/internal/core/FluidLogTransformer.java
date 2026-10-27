@@ -26,7 +26,7 @@ import com.falsepattern.lib.turboasm.TurboClassTransformer;
 public class FluidLogTransformer extends MergeableTurboTransformer {
 
     private static List<TurboClassTransformer> transformers() {
-        return Arrays.asList(new FluidLogRendererInjector(), new AngelicaFluidLogRendererInjector());
+        return Arrays.asList(new FluidLogRendererInjector());
     }
 
     public FluidLogTransformer() {
