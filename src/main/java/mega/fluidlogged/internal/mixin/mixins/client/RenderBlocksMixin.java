@@ -18,13 +18,19 @@
 package mega.fluidlogged.internal.mixin.mixins.client;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.RenderBlocks;
+import net.minecraft.init.Blocks;
 import net.minecraft.world.IBlockAccess;
+import net.minecraftforge.fluids.Fluid;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
+import com.llamalad7.mixinextras.sugar.Local;
+
+import mega.fluidlogged.api.FLBlockAccess;
 import mega.fluidlogged.internal.FLUtil;
 
 @Mixin(RenderBlocks.class)
@@ -36,7 +42,19 @@ public abstract class RenderBlocksMixin {
             value = "INVOKE",
             target = "Lnet/minecraft/world/IBlockAccess;getBlock(III)Lnet/minecraft/block/Block;"),
         require = 1)
-    private Block hijackGetBlock(IBlockAccess instance, int x, int y, int z) {
+    private Block hijackGetBlock(IBlockAccess instance, int x, int y, int z,
+        @Local(argsOnly = true) Material material) {
+        if (instance instanceof FLBlockAccess) {
+            Fluid fluid = ((FLBlockAccess) instance).fl$getFluid(x, y, z);
+            if (fluid != null) {
+                Block fluidBlock = fluid.getBlock();
+                // Vanilla getLiquidHeight treats non-solid neighbors as empty space. A different fluidlogged fluid
+                // should obstruct the surface instead, so substitute a solid block for the height calculation only.
+                if (fluidBlock != null && fluidBlock.getMaterial() != material) {
+                    return Blocks.stone;
+                }
+            }
+        }
         return FLUtil.getFluidOrBlock(instance, x, y, z);
     }
 
