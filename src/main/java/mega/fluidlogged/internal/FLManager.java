@@ -26,6 +26,7 @@ import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.server.S23PacketBlockChange;
+import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.util.Constants;
@@ -303,7 +304,14 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
 
     @Override
     public void readBlockFromPacket(Chunk chunk, int x, int y, int z, S23PacketBlockChange packet) {
-        ((FLChunk) chunk).fl$setFluid(x, y, z, ((FLPacket) packet).fl$getFluidLog());
+        val flChunk = (FLChunk) chunk;
+        val oldFluid = flChunk.fl$getFluid(x, y, z);
+        val fluid = ((FLPacket) packet).fl$getFluidLog();
+        flChunk.fl$setFluid(x, y, z, fluid);
+        if (chunk.worldObj != null && FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid)) {
+            chunk.worldObj
+                .updateLightByType(EnumSkyBlock.Block, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z);
+        }
     }
 
     @Override

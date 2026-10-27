@@ -21,6 +21,7 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.NextTickListEntry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -44,6 +45,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
 import lombok.val;
 import mega.fluidlogged.api.FLBlockAccess;
 import mega.fluidlogged.api.FLChunk;
+import mega.fluidlogged.internal.FLUtil;
 import mega.fluidlogged.internal.mixin.hook.FLBlockRoot;
 import mega.fluidlogged.internal.mixin.hook.FLWorld;
 
@@ -56,6 +58,9 @@ public abstract class WorldMixin implements FLBlockAccess, FLWorld {
 
     @Shadow
     public abstract void markBlockForUpdate(int p_147471_1_, int p_147471_2_, int p_147471_3_);
+
+    @Shadow
+    public abstract boolean updateLightByType(EnumSkyBlock type, int x, int y, int z);
 
     @Shadow
     public abstract boolean setBlock(int x, int y, int z, Block blockType);
@@ -161,8 +166,13 @@ public abstract class WorldMixin implements FLBlockAccess, FLWorld {
     public void fl$setFluid(int x, int y, int z, @Nullable Fluid fluid) {
         val chunk = getChunkFromBlockCoords(x, z);
         if (chunk == null || chunk instanceof EmptyChunk) return;
-        ((FLChunk) chunk).fl$setFluid(x & 0xF, y, z & 0xF, fluid);
+        val flChunk = (FLChunk) chunk;
+        val oldFluid = flChunk.fl$getFluid(x & 0xF, y, z & 0xF);
+        flChunk.fl$setFluid(x & 0xF, y, z & 0xF, fluid);
         markBlockForUpdate(x, y, z);
+        if (FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid)) {
+            updateLightByType(EnumSkyBlock.Block, x, y, z);
+        }
     }
 
     @Override

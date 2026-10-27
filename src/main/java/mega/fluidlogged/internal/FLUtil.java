@@ -66,6 +66,21 @@ public class FLUtil {
         return max;
     }
 
+    /**
+     * Light emitted by a fluidlogged fluid. Uses the fluid's registered luminosity and the fluid block's static light
+     * value rather than {@link Block#getLightValue(IBlockAccess, int, int, int)}, which can recurse back into the
+     * host block.
+     */
+    public static int fluidLightValue(@Nullable Fluid fluid) {
+        if (fluid == null) return 0;
+        int light = fluid.getLuminosity();
+        val block = fluid.getBlock();
+        if (block != null) {
+            light = Math.max(light, block.getLightValue());
+        }
+        return Math.min(15, Math.max(0, light));
+    }
+
     public static void fireBucketEvent(ItemStack item, World world, EntityPlayer player,
         Consumer<ItemStack> resultCallback, MovingObjectPosition pos) {
         val event = new FillBucketEvent(player, item, world, pos);
