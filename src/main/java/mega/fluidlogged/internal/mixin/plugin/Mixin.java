@@ -46,11 +46,13 @@ public enum Mixin implements IMixin {
     common_WorldServerMixin(Side.COMMON, always(), "WorldServerMixin"),
 
     client_ActiveRenderInfoMixin(Side.CLIENT, always(), "ActiveRenderInfoMixin"),
+    client_AngelicaChunkBuilderMeshingTaskMixin(Side.CLIENT, require(TargetedMod.ANGELICA_2_2_40), "AngelicaChunkBuilderMeshingTaskMixin"),
     client_AngelicaRenderBlockMixin(Side.CLIENT, require(TargetedMod.ANGELICA), "AngelicaRenderBlockMixin"),
     client_BlockFluidBaseMixin(Side.CLIENT, always(), "BlockFluidBaseMixin"),
     client_BlockLiquidMixin(Side.CLIENT, always(), "BlockLiquidMixin"),
     client_RenderBlockFluidMixin(Side.CLIENT, always(), "RenderBlockFluidMixin"),
     client_RenderBlocksMixin(Side.CLIENT, always(), "RenderBlocksMixin"),
+    client_TessellatorAccessorMixin(Side.CLIENT, require(TargetedMod.ANGELICA_2_2_40), "TessellatorAccessorMixin"),
 
     //region compat
     common_compat_cofh_ItemBucketMixin(Side.COMMON, require(TargetedMod.COFHCORE), "compat.cofh.ItemBucketMixin")
