@@ -20,6 +20,7 @@ package mega.fluidlogged.internal.mixin.mixins.client;
 import net.minecraft.block.Block;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.fluids.BlockFluidBase;
+import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.RenderBlockFluid;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -40,7 +41,16 @@ public abstract class RenderBlockFluidMixin {
             value = "INVOKE",
             target = "Lnet/minecraft/world/IBlockAccess;getBlock(III)Lnet/minecraft/block/Block;"),
         require = 4)
-    private Block fluidHeightGetBlock(IBlockAccess world, int x, int y, int z) {
+    private Block fluidHeightGetBlock(IBlockAccess world, int x, int y, int z,
+        @Local(argsOnly = true) BlockFluidBase inputBlock) {
+        if (world instanceof FLBlockAccess) {
+            Fluid fluid = ((FLBlockAccess) world).fl$getFluid(x, y, z);
+            // A different fluidlogged fluid must not count as this fluid. Returning the host block makes the height
+            // calculation treat it as an obstruction instead of a full source of the rendered fluid.
+            if (fluid != null && !fluid.equals(inputBlock.getFluid())) {
+                return world.getBlock(x, y, z);
+            }
+        }
         return FLUtil.getFluidOrBlock(world, x, y, z);
     }
 
@@ -61,7 +71,7 @@ public abstract class RenderBlockFluidMixin {
         remap = false,
         require = 1)
     private float fluidHeightQuanta(BlockFluidBase instance, IBlockAccess world, int x, int y, int z) {
-        if (((FLBlockAccess) world).fl$isFluidLogged(x, y, z, null)) {
+        if (world instanceof FLBlockAccess && ((FLBlockAccess) world).fl$isFluidLogged(x, y, z, instance.getFluid())) {
             return 1;
         }
         return instance.getQuantaPercentage(world, x, y, z);

@@ -29,18 +29,20 @@ public class ASMHooks {
     public static final int BIT_RENDERED_ANYTHING = 0b10;
 
     public static int drawFluidLogged(RenderBlocks renderBlocks, int x, int y, int z, int pass) {
-
+        if (!(renderBlocks.blockAccess instanceof FLBlockAccess)) {
+            return 0;
+        }
         val fluid = ((FLBlockAccess) renderBlocks.blockAccess).fl$getFluid(x, y, z);
         val fluidBlock = fluid == null ? null : fluid.getBlock();
 
         int result = 0;
 
         if (pass < 1 && fluidBlock != null && fluidBlock.getRenderBlockPass() > 0) {
-            result |= 0b1;
+            result |= BIT_NEXT_PASS;
         }
         if (fluidBlock != null && fluidBlock.canRenderInPass(pass)
             && renderBlocks.renderBlockByRenderType(fluidBlock, x, y, z)) {
-            result |= 0b10;
+            result |= BIT_RENDERED_ANYTHING;
         }
 
         return result;

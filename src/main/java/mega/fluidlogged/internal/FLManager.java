@@ -26,6 +26,7 @@ import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.server.S23PacketBlockChange;
+import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.util.Constants;
@@ -95,7 +96,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         if (!nbt.hasKey("FluidTicks", Constants.NBT.TAG_LIST)) {
             return;
         }
-        val nbtList = nbt.getTagList("FluidTicks", Constants.NBT.TAG_COMPOUND);
+        val nbtList = nbt.getTagList("FluidTicks", Constants.NBT.TAG_INT_ARRAY);
         if (nbtList == null) {
             return;
         }
@@ -201,6 +202,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
     @Override
     public void readFromBuffer(Chunk chunk, int subChunkMask, boolean forceUpdate, ByteBuffer buffer) {
         val subChunks = chunk.getBlockStorageArray();
+        boolean fluidDataChanged = false;
         for (int i = 0; i < subChunks.length; i++) {
             if ((subChunkMask & (1 << i)) != 0) {
                 val subChunk = subChunks[i];
@@ -208,6 +210,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
                     val wlSubChunk = (FLSubChunk) subChunk;
                     if (buffer.get() == (byte) 0) {
                         wlSubChunk.fl$setFluidLog(null);
+                        fluidDataChanged = true;
                         continue;
                     }
                     val length = buffer.getInt();
@@ -223,8 +226,12 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
                     }
                     val arr = deserialize(length, presence, ids);
                     wlSubChunk.fl$setFluidLog(arr);
+                    fluidDataChanged = true;
                 }
             }
+        }
+        if (fluidDataChanged) {
+            ((FLChunk) chunk).fl$invalidateHasFluid();
         }
     }
 
@@ -250,6 +257,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         if (!nbt.hasKey("fl$len", Constants.NBT.TAG_INT) || !nbt.hasKey("fl$pres", Constants.NBT.TAG_BYTE_ARRAY)
             || !nbt.hasKey("fl$ids", Constants.NBT.TAG_INT_ARRAY)) {
             flSubChunk.fl$setFluidLog(null);
+            ((FLChunk) chunk).fl$invalidateHasFluid();
             return;
         }
         val len = nbt.getInteger("fl$len");
@@ -257,6 +265,7 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         val ids = nbt.getIntArray("fl$ids");
         val deserialized = deserialize(len, presence, ids);
         flSubChunk.fl$setFluidLog(deserialized);
+        ((FLChunk) chunk).fl$invalidateHasFluid();
     }
 
     @Override
@@ -303,7 +312,14 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
 
     @Override
     public void readBlockFromPacket(Chunk chunk, int x, int y, int z, S23PacketBlockChange packet) {
-        ((FLChunk) chunk).fl$setFluid(x, y, z, ((FLPacket) packet).fl$getFluidLog());
+        val flChunk = (FLChunk) chunk;
+        val oldFluid = flChunk.fl$getFluid(x, y, z);
+        val fluid = ((FLPacket) packet).fl$getFluidLog();
+        flChunk.fl$setFluid(x, y, z, fluid);
+        if (chunk.worldObj != null && FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid)) {
+            chunk.worldObj
+                .updateLightByType(EnumSkyBlock.Block, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z);
+        }
     }
 
     @Override

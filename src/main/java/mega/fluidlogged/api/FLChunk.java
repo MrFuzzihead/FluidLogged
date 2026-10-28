@@ -42,6 +42,19 @@ public interface FLChunk {
      */
     void fl$setFluid(int x, int y, int z, @Nullable Fluid fluid);
 
+    /**
+     * @return true if this chunk may contain fluidlogged data. Conservative: may return true after the last fluid was
+     *         removed until the cache is invalidated.
+     */
+    default boolean fl$hasFluid() {
+        return true;
+    }
+
+    /**
+     * Marks the cached {@link #fl$hasFluid()} result as stale. Called after chunk data is loaded.
+     */
+    default void fl$invalidateHasFluid() {}
+
     static FLChunk of(Chunk chunk) {
         return (FLChunk) chunk;
     }

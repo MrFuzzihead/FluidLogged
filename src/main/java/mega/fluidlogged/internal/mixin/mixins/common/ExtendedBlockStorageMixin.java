@@ -38,6 +38,11 @@ public abstract class ExtendedBlockStorageMixin implements FLSubChunk {
     }
 
     @Override
+    public boolean fl$hasFluid() {
+        return fl$fluidLog != null;
+    }
+
+    @Override
     public void fl$setFluidLog(Fluid @Nullable [] fluidLog) {
         this.fl$fluidLog = fluidLog;
     }

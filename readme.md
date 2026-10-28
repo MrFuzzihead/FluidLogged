@@ -85,13 +85,14 @@ This fork continues the original FluidLogged project while modernizing its devel
 - Added GitHub Actions build/test and release workflows
 - Enabled Spotless and Checkstyle checks as part of the build
 - Updated build configuration and dependencies for the current toolchain
+- Added optional Angelica/Celeritas renderer integration without a published runtime dependency
 
 ## Roadmap
 
 - Correct light propagation
 - Add blast-resistance behavior
-- Support FalseTweaks threaded rendering
-- Validate compatibility with OptiFine shaders
+- Validate Angelica/Celeritas and Iris rendering
+- Keep OptiFine and other render-replacing mods out of scope
 
 ## Credits
 

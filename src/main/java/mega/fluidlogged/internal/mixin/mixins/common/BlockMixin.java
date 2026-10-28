@@ -20,10 +20,15 @@ package mega.fluidlogged.internal.mixin.mixins.common;
 import java.util.Random;
 
 import net.minecraft.block.Block;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.Fluid;
 
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
 import lombok.val;
 import mega.fluidlogged.api.FLBlockAccess;
@@ -33,6 +38,25 @@ import mega.fluidlogged.internal.mixin.hook.FLWorld;
 
 @Mixin(Block.class)
 public abstract class BlockMixin implements FLBlockRoot {
+
+    @ModifyReturnValue(
+        method = "getLightValue(Lnet/minecraft/world/IBlockAccess;III)I",
+        at = @At("RETURN"),
+        remap = false)
+    private int fluidlogged$fluidLight(int original, IBlockAccess world, int x, int y, int z) {
+        if (original >= 15 || !(world instanceof FLBlockAccess)) {
+            return original;
+        }
+        Fluid fluid = ((FLBlockAccess) world).fl$getFluid(x, y, z);
+        if (fluid == null) {
+            return original;
+        }
+        Block fluidBlock = fluid.getBlock();
+        if (fluidBlock == null || fluidBlock == (Block) (Object) this) {
+            return original;
+        }
+        return Math.max(original, FLUtil.fluidLightValue(fluid));
+    }
 
     @Override
     public void fl$updateTick(@NotNull World world, int x, int y, int z, @NotNull Random random) {

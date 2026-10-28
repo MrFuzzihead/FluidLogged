@@ -31,4 +31,12 @@ public interface FLSubChunk {
     Fluid fl$getFluid(int x, int y, int z);
 
     void fl$setFluid(int x, int y, int z, @Nullable Fluid fluid);
+
+    /**
+     * @return true if this subchunk may contain fluidlogged data. Conservative: may return true after the last fluid
+     *         was removed until the data is reloaded.
+     */
+    default boolean fl$hasFluid() {
+        return true;
+    }
 }
