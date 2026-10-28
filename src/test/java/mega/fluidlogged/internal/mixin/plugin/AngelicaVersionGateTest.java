@@ -48,6 +48,8 @@ class AngelicaVersionGateTest {
         assertTrue(gate.test("angelica-2.2.40"));
         assertTrue(gate.test("angelica-2.2.40-dev"));
         assertTrue(gate.test("angelica-2.2.40-beta"));
+        assertTrue(gate.test("angelica-2.2.40.jar"));
+        assertTrue(gate.test("angelica-2.2.40-dev.jar"));
         assertFalse(gate.test("angelica-2.1.60"));
         assertFalse(gate.test("angelica-2.2.19"));
         assertFalse(gate.test("angelica-2.2.41"));
