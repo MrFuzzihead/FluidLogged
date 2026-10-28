@@ -17,6 +17,8 @@
 
 package mega.fluidlogged.internal.core;
 
+import java.util.function.IntPredicate;
+
 import net.minecraft.block.Block;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.fluids.BlockFluidBase;
@@ -53,21 +55,29 @@ public final class AngelicaSafetyHooks {
             return true;
         }
         int renderType = fluidBlock.getRenderType();
+        // Forge's RenderBlockFluid is stateless, and Angelica cannot annotate Forge's own ISBRH.
+        // Custom fluid ISBRHs are conservatively deferred to the main thread.
+        return isThreadSafeFluidBlock(renderType, fluidBlock instanceof BlockFluidBase);
+    }
+
+    static boolean isThreadSafeFluidBlock(int renderType, boolean forgeFluidBlock) {
         if (renderType == -1 || (renderType >= 0 && renderType <= MAX_VANILLA_RENDER_TYPE)) {
             return true;
         }
-        // Forge's RenderBlockFluid is stateless, and Angelica cannot annotate Forge's own ISBRH.
-        // Custom fluid ISBRHs are conservatively deferred to the main thread.
-        return fluidBlock instanceof BlockFluidBase;
+        return forgeFluidBlock;
     }
 
     public static int fluidRenderPass(Block fluidBlock) {
         int pass = fluidBlock.getRenderBlockPass();
-        if (fluidBlock.canRenderInPass(pass)) {
+        if (pass >= 0 && pass < MAX_RENDER_PASSES && fluidBlock.canRenderInPass(pass)) {
             return pass;
         }
+        return firstAvailablePass(fluidBlock::canRenderInPass);
+    }
+
+    static int firstAvailablePass(IntPredicate canRenderInPass) {
         for (int candidate = 0; candidate < MAX_RENDER_PASSES; candidate++) {
-            if (fluidBlock.canRenderInPass(candidate)) {
+            if (canRenderInPass.test(candidate)) {
                 return candidate;
             }
         }

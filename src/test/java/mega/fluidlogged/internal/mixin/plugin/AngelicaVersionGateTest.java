@@ -43,6 +43,39 @@ class AngelicaVersionGateTest {
     }
 
     @Test
+    void deferredGateMatchesOnlyAngelica2240() {
+        Predicate<String> gate = TargetedMod.ANGELICA_2_2_40.getCondition();
+        assertTrue(gate.test("angelica-2.2.40"));
+        assertTrue(gate.test("angelica-2.2.40-dev"));
+        assertTrue(gate.test("angelica-2.2.40-beta"));
+        assertFalse(gate.test("angelica-2.1.60"));
+        assertFalse(gate.test("angelica-2.2.19"));
+        assertFalse(gate.test("angelica-2.2.41"));
+        assertFalse(gate.test("angelica-2.2.400"));
+        assertFalse(gate.test("angelica-2.3.0"));
+    }
+
+    @Test
+    void deferredMixinsAreClientOnlyAndRequireAngelica2240() {
+        assertDeferredMixin(Mixin.client_AngelicaChunkBuilderMeshingTaskMixin, "AngelicaChunkBuilderMeshingTaskMixin");
+        assertDeferredMixin(Mixin.client_TessellatorAccessorMixin, "TessellatorAccessorMixin");
+    }
+
+    private static void assertDeferredMixin(Mixin mixin, String name) {
+        assertEquals(IMixin.Side.CLIENT, mixin.getSide());
+        assertEquals(name, mixin.getMixin());
+        assertTrue(
+            mixin.getFilter()
+                .test(Collections.singletonList(TargetedMod.ANGELICA_2_2_40)));
+        assertFalse(
+            mixin.getFilter()
+                .test(Collections.singletonList(TargetedMod.ANGELICA)));
+        assertFalse(
+            mixin.getFilter()
+                .test(Collections.emptyList()));
+    }
+
+    @Test
     void rendererMixinIsClientOnlyAndRequiresAngelica() {
         assertEquals(IMixin.Side.CLIENT, Mixin.client_AngelicaRenderBlockMixin.getSide());
         assertEquals("AngelicaRenderBlockMixin", Mixin.client_AngelicaRenderBlockMixin.getMixin());
