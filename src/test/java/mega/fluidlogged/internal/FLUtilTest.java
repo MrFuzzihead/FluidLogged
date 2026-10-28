@@ -18,7 +18,9 @@
 package mega.fluidlogged.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -29,6 +31,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.fluids.Fluid;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import mega.fluidlogged.api.FLBlockAccess;
@@ -80,6 +83,17 @@ class FLUtilTest {
         assertEquals(15, FLUtil.fluidLightValue(fluid));
     }
 
+    @Test
+    void fluidLoggedCheckMatchesTheSameFluid() {
+        Fluid fluid = new Fluid("fluidlogged_match_test");
+        FLBlockAccess access = new TestFLBlockAccess(fluid);
+
+        assertTrue(access.fl$isFluidLogged(1, 2, 3, fluid));
+        assertTrue(access.fl$isFluidLogged(1, 2, 3, null));
+        assertFalse(access.fl$isFluidLogged(1, 2, 3, new Fluid("fluidlogged_other_fluid")));
+        assertFalse(access.fl$isFluidLogged(4, 5, 6, fluid));
+    }
+
     private static IBlockAccess fakeAccess(Block host, Fluid fluid, int fluidX, int fluidY, int fluidZ) {
         InvocationHandler handler = new InvocationHandler() {
 
@@ -124,6 +138,23 @@ class FLUtilTest {
         if (type == double.class) return 0D;
         if (type == char.class) return '\0';
         return null;
+    }
+
+    private static final class TestFLBlockAccess implements FLBlockAccess {
+
+        private final Fluid fluid;
+
+        private TestFLBlockAccess(Fluid fluid) {
+            this.fluid = fluid;
+        }
+
+        @Override
+        public @Nullable Fluid fl$getFluid(int x, int y, int z) {
+            return x == 1 && y == 2 && z == 3 ? fluid : null;
+        }
+
+        @Override
+        public void fl$setFluid(int x, int y, int z, @Nullable Fluid fluid) {}
     }
 
     private static final class TestBlock extends Block {
