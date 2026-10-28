@@ -87,7 +87,7 @@ public abstract class AngelicaChunkBuilderMeshingTaskMixin {
             && AngelicaSafetyHooks.fluidCanRenderOffThread(region, minX + x, minY + y, minZ + z);
     }
 
-    @Inject(method = "captureDeferred", at = @At("RETURN"), require = 0, expect = 1, remap = false)
+    @Inject(method = "captureDeferred", at = @At("RETURN"), require = 0, expect = 3, remap = false)
     private void fluidlogged$renderDeferredFluids(DeferredSectionMesh mesh,
         CallbackInfoReturnable<ChunkJobResult<ChunkBuildOutput>> cir) {
         if (cir.getReturnValue() != null || mesh.capture == null) {

@@ -113,6 +113,10 @@ class AngelicaDeferredMixinContractTest {
         assertTrue(
             hasInvoke(prescan, ANGELICA_TASK, "canRenderOffThread", "(Lnet/minecraft/block/Block;)Z"),
             "prescanDeferred no longer calls canRenderOffThread");
+        assertEquals(
+            1,
+            invokeCount(prescan, ANGELICA_TASK, "canRenderOffThread", "(Lnet/minecraft/block/Block;)Z"),
+            "prescanDeferred should call canRenderOffThread exactly once");
 
         String expectedHandlerDesc = "(L" + ANGELICA_TASK
             + ";Lnet/minecraft/block/Block;Lcom/llamalad7/mixinextras/injector/wrapoperation/Operation;"
@@ -201,7 +205,10 @@ class AngelicaDeferredMixinContractTest {
         assertEquals("captureDeferred", firstString(inject, "method"), "capture injection targets the wrong method");
         assertAt(inject, "RETURN", null);
         assertEquals(0, intValue(inject, "require"), "capture injection should degrade gracefully");
-        assertEquals(1, intValue(inject, "expect"), "capture injection should expect one RETURN");
+        assertEquals(
+            returnCount(findMethod(target, "captureDeferred")),
+            intValue(inject, "expect"),
+            "capture injection should expect every captureDeferred return (success plus failures)");
         assertFalse(booleanValue(inject, "remap", true), "capture injection must not remap the Angelica method");
 
         MethodNode capture = findMethod(target, "captureDeferred");
@@ -403,16 +410,33 @@ class AngelicaDeferredMixinContractTest {
         throw new AssertionError(methodName + " is missing local '" + name + "'");
     }
 
+    private static int returnCount(MethodNode method) {
+        int count = 0;
+        for (org.objectweb.asm.tree.AbstractInsnNode insn = method.instructions.getFirst(); insn
+            != null; insn = insn.getNext()) {
+            int opcode = insn.getOpcode();
+            if (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private static boolean hasInvoke(MethodNode method, String owner, String name, String desc) {
+        return invokeCount(method, owner, name, desc) > 0;
+    }
+
+    private static int invokeCount(MethodNode method, String owner, String name, String desc) {
+        int count = 0;
         for (org.objectweb.asm.tree.AbstractInsnNode insn = method.instructions.getFirst(); insn
             != null; insn = insn.getNext()) {
             if (!(insn instanceof MethodInsnNode)) continue;
             MethodInsnNode call = (MethodInsnNode) insn;
             if (owner.equals(call.owner) && name.equals(call.name) && desc.equals(call.desc)) {
-                return true;
+                count++;
             }
         }
-        return false;
+        return count;
     }
 
     private static void assertField(ClassNode cn, String name, String desc) {
