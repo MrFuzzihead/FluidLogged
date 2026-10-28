@@ -64,6 +64,14 @@ class AngelicaSafetyHooksTest {
     }
 
     @Test
+    void preferredRenderPassMustBeInRange() {
+        assertEquals(1, AngelicaSafetyHooks.fluidRenderPass(1, pass -> pass == 1));
+        assertEquals(0, AngelicaSafetyHooks.fluidRenderPass(2, pass -> pass == 0));
+        assertEquals(1, AngelicaSafetyHooks.fluidRenderPass(-1, pass -> pass == 1));
+        assertEquals(-1, AngelicaSafetyHooks.fluidRenderPass(2, pass -> pass == 2));
+    }
+
+    @Test
     void nonFluidAccessIsOffThreadSafe() {
         assertTrue(AngelicaSafetyHooks.fluidCanRenderOffThread(null, 0, 0, 0));
     }

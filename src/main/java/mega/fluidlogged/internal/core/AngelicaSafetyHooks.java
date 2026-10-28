@@ -68,11 +68,14 @@ public final class AngelicaSafetyHooks {
     }
 
     public static int fluidRenderPass(Block fluidBlock) {
-        int pass = fluidBlock.getRenderBlockPass();
-        if (pass >= 0 && pass < MAX_RENDER_PASSES && fluidBlock.canRenderInPass(pass)) {
-            return pass;
+        return fluidRenderPass(fluidBlock.getRenderBlockPass(), fluidBlock::canRenderInPass);
+    }
+
+    static int fluidRenderPass(int preferredPass, IntPredicate canRenderInPass) {
+        if (preferredPass >= 0 && preferredPass < MAX_RENDER_PASSES && canRenderInPass.test(preferredPass)) {
+            return preferredPass;
         }
-        return firstAvailablePass(fluidBlock::canRenderInPass);
+        return firstAvailablePass(canRenderInPass);
     }
 
     static int firstAvailablePass(IntPredicate canRenderInPass) {
