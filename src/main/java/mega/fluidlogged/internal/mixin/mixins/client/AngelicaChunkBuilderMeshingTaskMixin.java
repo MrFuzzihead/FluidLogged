@@ -104,6 +104,9 @@ public abstract class AngelicaChunkBuilderMeshingTaskMixin {
         }
 
         Tessellator tessellator = Tessellator.instance;
+        if (!(tessellator instanceof TessellatorAccessorMixin)) {
+            return;
+        }
         TessellatorAccessorMixin tessellatorAccessor = (TessellatorAccessorMixin) tessellator;
         StateAwareTessellator stateTessellator = (StateAwareTessellator) tessellator;
         RenderBlocks renderBlocks = new RenderBlocks(access);
@@ -158,7 +161,13 @@ public abstract class AngelicaChunkBuilderMeshingTaskMixin {
                 tessellatorAccessor.fluidlogged$reset();
                 tessellatorAccessor.fluidlogged$setDrawing(false);
             }
+        } catch (Throwable t) {
+            // captureDeferred has already completed its own error handling, so report the fluid pass as a failed job
+            // instead of letting the exception escape to the scheduler.
+            cir.setReturnValue(new ChunkJobResult.Failure<>(t));
         } finally {
+            tessellatorAccessor.fluidlogged$reset();
+            tessellatorAccessor.fluidlogged$setDrawing(false);
             stateTessellator.angelica$setCeleritasMeshing(false);
             SmoothBiomeColorCache.clearActiveCache();
             tessellator.setTranslation(0, 0, 0);
