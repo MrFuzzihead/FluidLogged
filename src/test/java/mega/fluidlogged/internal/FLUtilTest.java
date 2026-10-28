@@ -51,6 +51,35 @@ class FLUtilTest {
         assertEquals(3, FLUtil.getFluidMeta(access, 4, 5, 6, 7));
     }
 
+    @Test
+    void fluidLightValueUsesLuminosityAndBlockLight() {
+        Fluid fluid = new Fluid("fluidlogged_light_test");
+        assertEquals(0, FLUtil.fluidLightValue(null));
+        assertEquals(0, FLUtil.fluidLightValue(fluid));
+
+        fluid.setLuminosity(10);
+        assertEquals(10, FLUtil.fluidLightValue(fluid));
+
+        Block lightBlock = new TestBlock(Material.lava).withLightValue(12);
+        fluid.setBlock(lightBlock);
+        assertEquals(12, FLUtil.fluidLightValue(fluid));
+
+        fluid.setLuminosity(14);
+        assertEquals(14, FLUtil.fluidLightValue(fluid));
+    }
+
+    @Test
+    void fluidLightValueIsClampedToVanillaRange() {
+        Fluid fluid = new Fluid("fluidlogged_light_clamp_test").setLuminosity(20);
+        assertEquals(15, FLUtil.fluidLightValue(fluid));
+
+        fluid.setLuminosity(-5);
+        assertEquals(0, FLUtil.fluidLightValue(fluid));
+
+        fluid.setBlock(new TestBlock(Material.lava).withLightValue(20));
+        assertEquals(15, FLUtil.fluidLightValue(fluid));
+    }
+
     private static IBlockAccess fakeAccess(Block host, Fluid fluid, int fluidX, int fluidY, int fluidZ) {
         InvocationHandler handler = new InvocationHandler() {
 
@@ -99,8 +128,20 @@ class FLUtilTest {
 
     private static final class TestBlock extends Block {
 
+        private int lightValue;
+
         private TestBlock(Material material) {
             super(material);
+        }
+
+        private TestBlock withLightValue(int lightValue) {
+            this.lightValue = lightValue;
+            return this;
+        }
+
+        @Override
+        public int getLightValue() {
+            return lightValue;
         }
     }
 }
