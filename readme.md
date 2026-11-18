@@ -82,9 +82,9 @@ The repository ships three levels of automated tests:
 
 `build` also runs the tests and the JaCoCo coverage floor. The in-game test mod lives in
 `src/gameTest/java` and is only added to a run classpath when `-PgameTest` or
-`gameTestServer` is used, so it never reaches the published jar. It currently runs 25
+`gameTestServer` is used, so it never reaches the published jar. It currently runs 30
 assertions covering holders, storage, light, flow, break behaviour, explosions, fire,
-NBT persistence/migration and tick staging. It requires `run/server/eula.txt` (the dev run directory
+NBT persistence/migration, tick staging and a real chunk save/unload/reload cycle. It requires `run/server/eula.txt` (the dev run directory
 already has one) and exits with status 0 only after every assertion passes.
 
 The CI workflows are `.github/workflows/build-and-test.yml` (build, unit tests,
@@ -108,6 +108,7 @@ This fork continues the original FluidLogged project while modernizing its devel
 - Enabled Spotless and Checkstyle checks as part of the build
 - Updated build configuration and dependencies for the current toolchain
 - Added optional Angelica/Celeritas renderer integration without a published runtime dependency
+- Updated the dev target to Angelica 2.2.46; 2.2.45+ uses Angelica's native stored-fluid rendering
 - Added fluid light opacity, explosion resistance, fire suppression and operator commands
 - Added name-based, versioned fluid NBT persistence with legacy block-ID migration
 - Replaced the redirect-based liquid simulation with an owned flow engine and shape-aware face rules
@@ -116,7 +117,7 @@ This fork continues the original FluidLogged project while modernizing its devel
 
 ## Roadmap
 
-- Validate the Angelica 2.2.40 (legacy) and 2.2.45+ (native) rendering paths in a client
+- Validate the Angelica 2.2.45+ native rendering path in a client (2.2.46 is the current dev target)
 - Add optional ArchaicFix light-engine compatibility
 - Raise unit-test coverage above the current 18%/20% regression floor
 - Keep OptiFine and other render-replacing mods out of scope

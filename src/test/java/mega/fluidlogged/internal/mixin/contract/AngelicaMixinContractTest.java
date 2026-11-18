@@ -37,7 +37,7 @@ import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 
 /**
- * Headless contract check between the Angelica renderer Mixin and the real Angelica 2.2.40 class. This catches
+ * Headless contract check between the Angelica renderer Mixin and the current Angelica class. This catches
  * signature drift and annotation wiring mistakes without launching the game.
  */
 class AngelicaMixinContractTest {
