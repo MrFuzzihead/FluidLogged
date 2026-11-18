@@ -12,7 +12,9 @@ import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.ChunkEvent;
@@ -74,6 +76,7 @@ final class ServerGameTests {
         checkFireSuppression(world);
         checkNbtPersistence(world);
         checkTickStaging(world);
+        checkChunkSaveReload(world);
 
         clearCell(world, X, Y, Z);
         clearCell(world, X, Y - 1, Z);
@@ -267,6 +270,48 @@ final class ServerGameTests {
 
         flWorld.fl$getPendingFluidUpdates(chunk, true);
         clearCell(world, tickX, Y, tickZ);
+    }
+
+    private static void checkChunkSaveReload(WorldServer world) {
+        int x = 1000;
+        int z = 1000;
+        int cx = x >> 4;
+        int cz = z >> 4;
+        IChunkProvider provider = world.getChunkProvider();
+        Chunk chunk = provider.loadChunk(cx, cz);
+        check("far chunk loads", chunk != null);
+        if (chunk == null) {
+            return;
+        }
+
+        world.setBlock(x, Y, z, Blocks.stone_stairs, 0, 3);
+        ((FLBlockAccess) world).fl$setFluid(x, Y, z, FluidRegistry.WATER);
+        FLWorld flWorld = (FLWorld) world;
+        flWorld.fl$scheduleFluidUpdate(x, Y, z, Blocks.stone_stairs, 40);
+        chunk.setChunkModified();
+
+        if (provider instanceof ChunkProviderServer) {
+            ((ChunkProviderServer) provider).unloadChunksIfNotNearSpawn(cx, cz);
+        }
+        provider.unloadQueuedChunks();
+        // AnvilChunkLoader queues writes on its IO thread; flush them before reading the chunk back.
+        provider.saveExtraData();
+        check("far chunk unloads", !provider.chunkExists(cx, cz));
+
+        Chunk reloaded = provider.loadChunk(cx, cz);
+        check("far chunk reloads", reloaded != null);
+        if (reloaded == null) {
+            return;
+        }
+        check(
+            "stored fluid survives save/unload/reload",
+            ((FLBlockAccess) world).fl$getFluid(x, Y, z) == FluidRegistry.WATER);
+        check(
+            "pending fluid tick survives save/unload/reload",
+            flWorld.fl$getPendingFluidUpdates(reloaded, false) != null);
+
+        flWorld.fl$getPendingFluidUpdates(reloaded, true);
+        clearCell(world, x, Y, z);
     }
 
     private static void clearCell(WorldServer world, int x, int y, int z) {
