@@ -82,9 +82,10 @@ The repository ships three levels of automated tests:
 
 `build` also runs the tests and the JaCoCo coverage floor. The in-game test mod lives in
 `src/gameTest/java` and is only added to a run classpath when `-PgameTest` or
-`gameTestServer` is used, so it never reaches the published jar. It requires
-`run/server/eula.txt` (the dev run directory already has one) and exits with status 0
-only after every assertion passes.
+`gameTestServer` is used, so it never reaches the published jar. It currently runs 20
+assertions covering holders, storage, light, flow, break behaviour, explosions, fire
+and NBT persistence/migration. It requires `run/server/eula.txt` (the dev run directory
+already has one) and exits with status 0 only after every assertion passes.
 
 The CI workflows are `.github/workflows/build-and-test.yml` (build, unit tests,
 coverage verification) and `.github/workflows/game-test.yml` (coverage artifact and
