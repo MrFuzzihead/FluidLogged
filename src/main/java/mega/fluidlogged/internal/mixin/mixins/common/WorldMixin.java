@@ -26,6 +26,7 @@ import net.minecraft.world.NextTickListEntry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.EmptyChunk;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.Fluid;
 
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +46,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
 import lombok.val;
 import mega.fluidlogged.api.FLBlockAccess;
 import mega.fluidlogged.api.FLChunk;
+import mega.fluidlogged.api.event.FluidLogEvent;
 import mega.fluidlogged.internal.FLUtil;
 import mega.fluidlogged.internal.mixin.hook.FLBlockRoot;
 import mega.fluidlogged.internal.mixin.hook.FLWorld;
@@ -168,11 +170,13 @@ public abstract class WorldMixin implements FLBlockAccess, FLWorld {
         if (chunk == null || chunk instanceof EmptyChunk) return;
         val flChunk = (FLChunk) chunk;
         val oldFluid = flChunk.fl$getFluid(x & 0xF, y, z & 0xF);
+        if (oldFluid == fluid) return;
+        if (MinecraftForge.EVENT_BUS.post(new FluidLogEvent((World) (Object) this, x, y, z, oldFluid, fluid))) {
+            return;
+        }
         flChunk.fl$setFluid(x & 0xF, y, z & 0xF, fluid);
         markBlockForUpdate(x, y, z);
-        if (FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid)) {
-            updateLightByType(EnumSkyBlock.Block, x, y, z);
-        }
+        FLUtil.updateFluidLight((World) (Object) this, x, y, z, oldFluid, fluid);
     }
 
     @Override
@@ -191,6 +195,9 @@ public abstract class WorldMixin implements FLBlockAccess, FLWorld {
 
     @Override
     public void fl$insertUpdate(int x, int y, int z, @NotNull Block block, int delay, int priority) {}
+
+    @Override
+    public void fl$commitStagedUpdates(@NotNull net.minecraft.world.chunk.Chunk chunk) {}
 
     @Override
     public @Nullable List<NextTickListEntry> fl$getPendingFluidUpdates(@NotNull Chunk chunk, boolean remove) {

@@ -2,15 +2,16 @@
   {
     "modid": "${modId}",
     "name": "${modName}",
-    "description": "Waterlogging with any fluid.",
+    "description": "Waterlogging with any fluid, with modern light, explosion, fire and persistence behavior.",
     "version": "${modVersion}",
     "mcversion": "${minecraftVersion}",
-    "url": "https://github.com/GTMEGA/FluidLogged",
-    "updateUrl": "",
+    "url": "https://github.com/MrFuzzihead/FluidLogged",
+    "updateUrl": "https://github.com/MrFuzzihead/FluidLogged/releases",
     "authorList": [
-      "FalsePattern"
+      "FalsePattern",
+      "MrFuzzihead"
     ],
-    "credits": "MEGA Team",
+    "credits": "MEGA Team; fork maintained by MrFuzzihead",
     "logoFile": "",
     "screenshots": [],
     "dependencies": []

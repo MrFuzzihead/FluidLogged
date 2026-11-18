@@ -36,26 +36,28 @@ public enum Mixin implements IMixin {
     common_BlockLiquidMixin(Side.COMMON, always(), "BlockLiquidMixin"),
     common_BlockDynamicLiquidMixin(Side.COMMON, always(), "BlockDynamicLiquidMixin"),
     common_BlockFluidClassicMixin(Side.COMMON, always(), "BlockFluidClassicMixin"),
+    common_BlockFireMixin(Side.COMMON, always(), "BlockFireMixin"),
     common_BlockMixin(Side.COMMON, always(), "BlockMixin"),
     common_ChunkCacheMixin(Side.COMMON, always(), "ChunkCacheMixin"),
     common_ChunkMixin(Side.COMMON, always(), "ChunkMixin"),
     common_EntityMixin(Side.COMMON, always(), "EntityMixin"),
+    common_ExplosionMixin(Side.COMMON, always(), "ExplosionMixin"),
     common_ExtendedBlockStorageMixin(Side.COMMON, always(), "ExtendedBlockStorageMixin"),
     common_S23PacketBlockChangeMixin(Side.COMMON, always(), "S23PacketBlockChangeMixin"),
     common_WorldMixin(Side.COMMON, always(), "WorldMixin"),
     common_WorldServerMixin(Side.COMMON, always(), "WorldServerMixin"),
+    common_accessor_AccessorBlockDynamicLiquid(Side.COMMON, always(), "accessor.AccessorBlockDynamicLiquid"),
+    common_accessor_AccessorBlockLiquid(Side.COMMON, always(), "accessor.AccessorBlockLiquid"),
 
     client_ActiveRenderInfoMixin(Side.CLIENT, always(), "ActiveRenderInfoMixin"),
-    client_AngelicaChunkBuilderMeshingTaskMixin(Side.CLIENT, require(TargetedMod.ANGELICA_2_2_40), "AngelicaChunkBuilderMeshingTaskMixin"),
-    client_AngelicaRenderBlockMixin(Side.CLIENT, require(TargetedMod.ANGELICA), "AngelicaRenderBlockMixin"),
     client_BlockFluidBaseMixin(Side.CLIENT, always(), "BlockFluidBaseMixin"),
     client_BlockLiquidMixin(Side.CLIENT, always(), "BlockLiquidMixin"),
     client_RenderBlockFluidMixin(Side.CLIENT, always(), "RenderBlockFluidMixin"),
     client_RenderBlocksMixin(Side.CLIENT, always(), "RenderBlocksMixin"),
-    client_TessellatorAccessorMixin(Side.CLIENT, require(TargetedMod.ANGELICA_2_2_40), "TessellatorAccessorMixin"),
 
     //region compat
-    common_compat_cofh_ItemBucketMixin(Side.COMMON, require(TargetedMod.COFHCORE), "compat.cofh.ItemBucketMixin")
+    common_compat_cofh_ItemBucketMixin(Side.COMMON, require(TargetedMod.COFHCORE), "compat.cofh.ItemBucketMixin"),
+    common_compat_archaicfix_MixinLightingEngine(Side.COMMON, require(TargetedMod.ARCHAICFIX), "compat.archaicfix.MixinLightingEngine")
     //endregion
     ;
     // @formatter:on

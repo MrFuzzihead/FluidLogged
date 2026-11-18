@@ -27,12 +27,14 @@ import net.minecraft.block.BlockChest;
 import net.minecraft.block.BlockEnderChest;
 import net.minecraft.block.BlockFence;
 import net.minecraft.block.BlockLadder;
+import net.minecraft.block.BlockLeaves;
 import net.minecraft.block.BlockPane;
 import net.minecraft.block.BlockRailBase;
 import net.minecraft.block.BlockSign;
 import net.minecraft.block.BlockSlab;
 import net.minecraft.block.BlockStairs;
 import net.minecraft.block.BlockTrapDoor;
+import net.minecraft.block.BlockWall;
 import net.minecraft.init.Blocks;
 import net.minecraftforge.fluids.Fluid;
 
@@ -52,6 +54,7 @@ public class MinecraftWorldDriver implements WorldDriver {
         waterLoggableClasses.add(BlockChest.class);
         waterLoggableClasses.add(BlockEnderChest.class);
         waterLoggableClasses.add(BlockFence.class);
+        waterLoggableClasses.add(BlockLeaves.class);
         waterLoggableClasses.add(BlockPane.class);
         waterLoggableClasses.add(BlockLadder.class);
         waterLoggableClasses.add(BlockRailBase.class);
@@ -59,6 +62,7 @@ public class MinecraftWorldDriver implements WorldDriver {
         waterLoggableClasses.add(BlockSlab.class);
         waterLoggableClasses.add(BlockStairs.class);
         waterLoggableClasses.add(BlockTrapDoor.class);
+        waterLoggableClasses.add(BlockWall.class);
         lavaLoggable.add(Blocks.nether_brick_fence);
         lavaLoggable.add(Blocks.iron_bars);
         lavaLoggable.add(Blocks.stone_slab);
@@ -72,7 +76,9 @@ public class MinecraftWorldDriver implements WorldDriver {
 
     @Override
     public boolean canBeFluidLogged(@NotNull Block block, int meta, @NotNull Fluid fluid) {
-        if (block.isOpaqueCube()) return false;
+        // On a dedicated server BlockLeaves.isOpaqueCube() is true (it follows the client graphics
+        // level), but leaves are still meant to hold water.
+        if (block.isOpaqueCube() && !(block instanceof BlockLeaves)) return false;
 
         val temp = fluid.getTemperature();
         if (temp >= 373) {

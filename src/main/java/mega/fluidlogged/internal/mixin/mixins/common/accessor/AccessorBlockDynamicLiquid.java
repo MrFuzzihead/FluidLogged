@@ -15,30 +15,24 @@
  * along with FluidLogged. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package mega.fluidlogged.internal.mixin.mixins.client;
+package mega.fluidlogged.internal.mixin.mixins.common.accessor;
 
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.block.BlockDynamicLiquid;
+import net.minecraft.world.World;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-/**
- * Angelica captures deferred geometry straight from the tessellator's raw buffers. These accessors let FluidLogged do
- * the same without an access transformer.
- */
-@Mixin(Tessellator.class)
-public interface TessellatorAccessorMixin {
+/** Invokers for the private spreading helpers of {@code BlockDynamicLiquid}. */
+@Mixin(BlockDynamicLiquid.class)
+public interface AccessorBlockDynamicLiquid {
 
-    @Accessor("rawBuffer")
-    int[] fluidlogged$getRawBuffer();
+    @Invoker("func_149808_o")
+    boolean[] fl$optimalFlowDirections(World world, int x, int y, int z);
 
-    @Accessor("vertexCount")
-    int fluidlogged$getVertexCount();
+    @Invoker("func_149813_h")
+    void fl$flowInto(World world, int x, int y, int z, int meta);
 
-    @Accessor("isDrawing")
-    void fluidlogged$setDrawing(boolean drawing);
-
-    @Invoker("reset")
-    void fluidlogged$reset();
+    @Invoker("func_149809_q")
+    boolean fl$canFlowInto(World world, int x, int y, int z);
 }

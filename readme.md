@@ -17,6 +17,7 @@
 - [Installation](#installation)
 - [Downloads](#downloads)
 - [Building from source](#building-from-source)
+- [Testing](#testing)
 - [Contributing](#contributing)
 - [Changes in this fork](#changes-in-this-fork)
 - [Roadmap](#roadmap)
@@ -30,6 +31,8 @@
 - Supports bucket interactions and fluid simulation for compatible fluid blocks
 - Handles the standard 1.7.10 waterloggable block set, including stairs, slabs, fences, panes, ladders, rails, signs, trapdoors, and chests
 - Provides APIs for registering additional bucket and world drivers
+- Fires a cancellable `FluidLogEvent` before stored-fluid changes
+- Has optional ArchaicFix light-engine compatibility
 
 ## Requirements
 
@@ -37,8 +40,9 @@
 |--------------------------------------------------------------------|--------------|-----------------------------------------------------------------------------------------|
 | Minecraft                                                          | 1.7.10       | —                                                                                       |
 | Minecraft Forge                                                    | 10.13.4.1614 | [Download](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.7.10.html) |
-| [ChunkAPI](https://github.com/FalsePattern/ChunkAPI)               | 0.6.4+       | Required at runtime                                                                     |
-| [FalsePatternLib](https://github.com/FalsePattern/FalsePatternLib) | 1.7.0+       | Required at runtime                                                                     |
+| [ChunkAPI](https://github.com/FalsePattern/ChunkAPI)               | 0.8.4+       | Required at runtime                                                                     |
+| [FalsePatternLib](https://github.com/FalsePattern/FalsePatternLib) | 1.12.2+      | Required at runtime                                                                     |
+| [Angelica](https://github.com/GTNewHorizons/Angelica)              | 2.2.45+      | Optional; required for Celeritas rendering. Older versions are unsupported.             |
 
 ## Installation
 
@@ -46,7 +50,9 @@
 2. Download the latest **FluidLogged** jar from the [Releases](https://github.com/MrFuzzihead/FluidLogged/releases/latest) page.
 3. Download the matching 1.7.10 versions of [ChunkAPI](https://github.com/FalsePattern/ChunkAPI) and [FalsePatternLib](https://github.com/FalsePattern/FalsePatternLib).
 4. Drop the FluidLogged and dependency jars into your `.minecraft/mods` folder.
-5. Launch Minecraft using the Forge profile.
+5. If you use Angelica, use **2.2.45 or newer**; FluidLogged relies on Angelica's native
+   stored-fluid rendering there and does not ship a custom Celeritas hook.
+6. Launch Minecraft using the Forge profile.
 
 ## Downloads
 
@@ -69,6 +75,27 @@ The built jars are placed in `build/libs/`. To launch a development client:
 ./gradlew runClient    # on Windows: gradlew.bat runClient
 ```
 
+## Testing
+
+The repository ships three levels of automated tests:
+
+```bash
+./gradlew test              # JUnit 5 unit tests (Mockito for mocks)
+./gradlew jacocoTestReport  # HTML/XML coverage in build/reports/jacoco/test
+./gradlew gameTestServer    # boots a dev dedicated server and runs src/gameTest
+```
+
+`build` also runs the tests and the JaCoCo coverage floor. The in-game test mod lives in
+`src/gameTest/java` and is only added to a run classpath when `-PgameTest` or
+`gameTestServer` is used, so it never reaches the published jar. It currently runs 33
+assertions covering holders, storage, light, flow, break behaviour, explosions, fire,
+NBT persistence/migration, tick staging and a real chunk save/unload/reload cycle. It requires `run/server/eula.txt` (the dev run directory
+already has one) and exits with status 0 only after every assertion passes.
+
+The CI workflows are `.github/workflows/build-and-test.yml` (build, unit tests,
+coverage verification) and `.github/workflows/game-test.yml` (coverage artifact and
+the in-game assertions).
+
 ## Contributing
 
 Bug reports and pull requests are welcome! Please use the [issue tracker](https://github.com/MrFuzzihead/FluidLogged/issues) for bugs and compatibility questions.
@@ -85,13 +112,17 @@ This fork continues the original FluidLogged project while modernizing its devel
 - Added GitHub Actions build/test and release workflows
 - Enabled Spotless and Checkstyle checks as part of the build
 - Updated build configuration and dependencies for the current toolchain
-- Added optional Angelica/Celeritas renderer integration without a published runtime dependency
+- Relies on Angelica 2.2.45+ native stored-fluid rendering; no custom Angelica mixins
+- Added fluid light opacity, explosion resistance, fire suppression and operator commands
+- Added name-based, versioned fluid NBT persistence with legacy block-ID migration
+- Replaced the redirect-based liquid simulation with an owned flow engine and shape-aware face rules
+- Added JUnit 5 + Mockito + JaCoCo unit tests and an in-game `gameTest` mod
+- Staged pending fluid ticks across chunk load and made tick saves use exact chunk bounds
 
 ## Roadmap
 
-- Correct light propagation
-- Add blast-resistance behavior
-- Validate Angelica/Celeritas and Iris rendering
+- Validate the Angelica 2.2.45+ native rendering path in a client (2.2.46 is the current dev target)
+- Raise unit-test coverage above the current 36%/36% regression floor
 - Keep OptiFine and other render-replacing mods out of scope
 
 ## Credits

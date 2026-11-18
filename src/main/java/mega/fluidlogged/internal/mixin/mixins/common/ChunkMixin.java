@@ -18,6 +18,7 @@
 package mega.fluidlogged.internal.mixin.mixins.common;
 
 import net.minecraft.block.Block;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.fluids.Fluid;
@@ -29,6 +30,8 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
 import lombok.val;
 import mega.fluidlogged.api.FLChunk;
@@ -113,6 +116,11 @@ public abstract class ChunkMixin implements FLChunk {
         return false;
     }
 
+    @ModifyReturnValue(method = "func_150808_b", at = @At("RETURN"), require = 1)
+    private int fluidlogged$fluidOpacity(int original, int x, int y, int z) {
+        return Math.max(original, FLUtil.fluidLightOpacity(fl$getFluid(x, y, z)));
+    }
+
     @Inject(method = "func_150807_a", at = @At("HEAD"), require = 1)
     private void setBlock(int x, int y, int z, Block block, int meta, CallbackInfoReturnable<Boolean> cir) {
         val originalBlock = getBlock(x, y, z);
@@ -124,11 +132,20 @@ public abstract class ChunkMixin implements FLChunk {
             fl$setFluid(x, y, z, null);
         } else {
             fl$setFluid(x, y, z, currentFluid);
+            Block fluidBlock = currentFluid.getBlock();
+            if (fluidBlock != null && chunkWorld() != null && !chunkWorld().isRemote) {
+                FLUtil.onFluidPlacedInto(chunkWorld(), x, y, z, block, fluidBlock);
+            }
         }
     }
 
     @Unique
     private Chunk fl$this() {
         return (Chunk) (Object) this;
+    }
+
+    @Unique
+    private World chunkWorld() {
+        return fl$this().worldObj;
     }
 }

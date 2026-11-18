@@ -18,18 +18,23 @@
 package mega.fluidlogged.internal;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
+import java.util.function.Function;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.server.S23PacketBlockChange;
-import net.minecraft.world.EnumSkyBlock;
+import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
@@ -39,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import com.falsepattern.chunk.api.ArrayUtil;
 import com.falsepattern.chunk.api.DataManager;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import gnu.trove.list.array.TIntArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -71,7 +77,9 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
     public void writeChunkToNBT(Chunk chunk, NBTTagCompound nbt) {
         val world = chunk.worldObj;
         val fl$world = (FLWorld) world;
-        val updates = fl$world.fl$getPendingFluidUpdates(chunk, false);
+        // On the unload save, remove the ticks we are about to write so they cannot tick in memory
+        // while the chunk is gone; the NBT copy is reloaded on the next load.
+        val updates = fl$world.fl$getPendingFluidUpdates(chunk, !chunk.isChunkLoaded);
         if (updates == null) {
             return;
         }
@@ -104,7 +112,23 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         val count = nbtList.tagCount();
         for (int i = 0; i < count; i++) {
             val entry = nbtList.func_150306_c(i);
-            fl$world.fl$insertUpdate(entry[0], entry[1], entry[2], Block.getBlockById(entry[3]), entry[4], entry[5]);
+            if (entry.length < 6) {
+                continue;
+            }
+            val block = Block.getBlockById(entry[3]);
+            if (block == null) {
+                continue;
+            }
+            fl$world.fl$insertUpdate(entry[0], entry[1], entry[2], block, entry[4], entry[5]);
+        }
+    }
+
+    /** Commits ticks read from a chunk's NBT once Forge has put the chunk into the world. */
+    @SubscribeEvent
+    public void onChunkLoad(ChunkEvent.Load event) {
+        Chunk chunk = event.getChunk();
+        if (chunk != null && chunk.worldObj instanceof WorldServer) {
+            ((FLWorld) chunk.worldObj).fl$commitStagedUpdates(chunk);
         }
     }
 
@@ -142,6 +166,56 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         }
         if (presence == null) return null;
         return new FluidIDList(presence, ids.toArray());
+    }
+
+    @RequiredArgsConstructor
+    static class FluidNameList {
+
+        public final @NotNull BitSet presence;
+        public final @NotNull List<String> names;
+    }
+
+    static @Nullable FluidNameList serializeNames(Fluid @NotNull [] fluids) {
+        BitSet presence = null;
+        val names = new ArrayList<String>();
+        val length = fluids.length;
+        for (int i = 0; i < length; i++) {
+            val fluid = fluids[i];
+            if (fluid == null) {
+                continue;
+            }
+            if (presence == null) {
+                presence = new BitSet(length);
+            }
+            presence.set(i);
+            names.add(fluid.getName());
+        }
+        if (presence == null) return null;
+        return new FluidNameList(presence, names);
+    }
+
+    static Fluid @Nullable [] deserializeNames(int length, @NotNull BitSet presence, @NotNull List<String> names) {
+        return deserializeNames(length, presence, names, FluidRegistry::getFluid);
+    }
+
+    static Fluid @Nullable [] deserializeNames(int length, @NotNull BitSet presence, @NotNull List<String> names,
+        @NotNull Function<String, Fluid> byName) {
+        int nameI = 0;
+        Fluid[] fluids = null;
+        for (int i = 0; i < length && nameI < names.size(); i++) {
+            if (presence.get(i)) {
+                val fluid = byName.apply(names.get(nameI));
+                nameI++;
+                if (fluid == null) {
+                    continue;
+                }
+                if (fluids == null) {
+                    fluids = new Fluid[length];
+                }
+                fluids[i] = fluid;
+            }
+        }
+        return fluids;
     }
 
     private static Fluid @Nullable [] deserialize(int length, @NotNull BitSet presence, int @NotNull [] ids) {
@@ -240,20 +314,55 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         val flSubChunk = (FLSubChunk) subChunk;
         val fluidLog = flSubChunk.fl$getFluidLog();
         if (fluidLog == null) {
+            clearSavedFormat(nbt);
             return;
         }
-        val serialized = serialize(fluidLog);
+        val serialized = serializeNames(fluidLog);
         if (serialized == null) {
+            clearSavedFormat(nbt);
             return;
         }
+        nbt.setByte("fl$v", (byte) 2);
         nbt.setInteger("fl$len", fluidLog.length);
         nbt.setByteArray("fl$pres", serialized.presence.toByteArray());
-        nbt.setIntArray("fl$ids", serialized.ids);
+        val names = new NBTTagList();
+        for (val name : serialized.names) {
+            names.appendTag(new NBTTagString(name));
+        }
+        nbt.setTag("fl$names", names);
+        nbt.removeTag("fl$ids");
+    }
+
+    private static void clearSavedFormat(NBTTagCompound nbt) {
+        nbt.removeTag("fl$v");
+        nbt.removeTag("fl$len");
+        nbt.removeTag("fl$pres");
+        nbt.removeTag("fl$names");
+        nbt.removeTag("fl$ids");
     }
 
     @Override
     public void readSubChunkFromNBT(Chunk chunk, ExtendedBlockStorage subChunk, NBTTagCompound nbt) {
         val flSubChunk = (FLSubChunk) subChunk;
+        if (nbt.hasKey("fl$v", Constants.NBT.TAG_BYTE) && nbt.getByte("fl$v") == 2) {
+            if (!nbt.hasKey("fl$len", Constants.NBT.TAG_INT) || !nbt.hasKey("fl$pres", Constants.NBT.TAG_BYTE_ARRAY)
+                || !nbt.hasKey("fl$names", Constants.NBT.TAG_LIST)) {
+                flSubChunk.fl$setFluidLog(null);
+                ((FLChunk) chunk).fl$invalidateHasFluid();
+                return;
+            }
+            val len = nbt.getInteger("fl$len");
+            val presence = BitSet.valueOf(nbt.getByteArray("fl$pres"));
+            val nameList = nbt.getTagList("fl$names", Constants.NBT.TAG_STRING);
+            val names = new ArrayList<String>(nameList.tagCount());
+            for (int i = 0; i < nameList.tagCount(); i++) {
+                names.add(nameList.getStringTagAt(i));
+            }
+            flSubChunk.fl$setFluidLog(deserializeNames(len, presence, names));
+            ((FLChunk) chunk).fl$invalidateHasFluid();
+            return;
+        }
+        // Legacy format: block IDs. Kept so worlds saved before the fluid-name format still load.
         if (!nbt.hasKey("fl$len", Constants.NBT.TAG_INT) || !nbt.hasKey("fl$pres", Constants.NBT.TAG_BYTE_ARRAY)
             || !nbt.hasKey("fl$ids", Constants.NBT.TAG_INT_ARRAY)) {
             flSubChunk.fl$setFluidLog(null);
@@ -316,9 +425,14 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         val oldFluid = flChunk.fl$getFluid(x, y, z);
         val fluid = ((FLPacket) packet).fl$getFluidLog();
         flChunk.fl$setFluid(x, y, z, fluid);
-        if (chunk.worldObj != null && FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid)) {
-            chunk.worldObj
-                .updateLightByType(EnumSkyBlock.Block, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z);
+        if (chunk.worldObj != null) {
+            FLUtil.updateFluidLight(
+                chunk.worldObj,
+                (chunk.xPosition << 4) + x,
+                y,
+                (chunk.zPosition << 4) + z,
+                oldFluid,
+                fluid);
         }
     }
 

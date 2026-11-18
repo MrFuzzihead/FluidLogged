@@ -21,19 +21,17 @@ import java.util.Random;
 import java.util.function.Consumer;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockDynamicLiquid;
 import net.minecraft.block.BlockLiquid;
-import net.minecraft.block.BlockStaticLiquid;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.FillBucketEvent;
-import net.minecraftforge.fluids.BlockFluidClassic;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
@@ -44,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import cpw.mods.fml.common.eventhandler.Event;
 import lombok.val;
 import mega.fluidlogged.api.FLBlockAccess;
+import mega.fluidlogged.internal.flow.FLFlow;
 import mega.fluidlogged.internal.mixin.hook.FLWorld;
 
 public class FLUtil {
@@ -79,6 +78,30 @@ public class FLUtil {
             light = Math.max(light, block.getLightValue());
         }
         return Math.min(15, Math.max(0, light));
+    }
+
+    /**
+     * Light opacity of a fluidlogged fluid, taken from its block's static opacity. Used for the chunk height map and
+     * skylight calculations, mirroring how vanilla water dims light while a waterloggable host block does not.
+     */
+    public static int fluidLightOpacity(@Nullable Fluid fluid) {
+        if (fluid == null) return 0;
+        val block = fluid.getBlock();
+        if (block == null) return 0;
+        return Math.min(255, Math.max(0, block.getLightOpacity()));
+    }
+
+    /** Relights a cell after its stored fluid changed, covering both emission and opacity. */
+    public static void updateFluidLight(World world, int x, int y, int z, @Nullable Fluid oldFluid,
+        @Nullable Fluid newFluid) {
+        val lightChanged = fluidLightValue(oldFluid) != fluidLightValue(newFluid);
+        val opacityChanged = fluidLightOpacity(oldFluid) != fluidLightOpacity(newFluid);
+        if (lightChanged || opacityChanged) {
+            world.updateLightByType(EnumSkyBlock.Block, x, y, z);
+        }
+        if (opacityChanged) {
+            world.updateLightByType(EnumSkyBlock.Sky, x, y, z);
+        }
     }
 
     public static void fireBucketEvent(ItemStack item, World world, EntityPlayer player,
@@ -120,29 +143,7 @@ public class FLUtil {
     }
 
     public static void simulate(@NotNull World world, int x, int y, int z, @NotNull Random random, Fluid fluid) {
-        val block = fluid.getBlock();
-        if (block == null) return;
-        if (block instanceof BlockLiquid) {
-            val simBlock = resolveVanillaSimulationLiquid(block);
-            if (simBlock != null) {
-                simBlock.updateTick(world, x, y, z, random);
-            }
-        } else if (block instanceof BlockFluidClassic) {
-            block.updateTick(world, x, y, z, random);
-        }
-    }
-
-    private static @Nullable BlockDynamicLiquid resolveVanillaSimulationLiquid(Block block) {
-        if (block instanceof BlockDynamicLiquid) {
-            return (BlockDynamicLiquid) block;
-        }
-        if (block instanceof BlockStaticLiquid) {
-            val dynamic = Block.getBlockById(Block.getIdFromBlock(block) - 1);
-            if (dynamic instanceof BlockDynamicLiquid && dynamic.getMaterial() == block.getMaterial()) {
-                return (BlockDynamicLiquid) dynamic;
-            }
-        }
-        return null;
+        FLFlow.tick(world, x, y, z, fluid);
     }
 
     public static @Nullable Fluid fromChunkBlock(@NotNull Chunk chunk, int x, int y, int z, @NotNull Block block) {
