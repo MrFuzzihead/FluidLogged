@@ -17,6 +17,7 @@
 - [Installation](#installation)
 - [Downloads](#downloads)
 - [Building from source](#building-from-source)
+- [Testing](#testing)
 - [Contributing](#contributing)
 - [Changes in this fork](#changes-in-this-fork)
 - [Roadmap](#roadmap)
@@ -68,6 +69,26 @@ The built jars are placed in `build/libs/`. To launch a development client:
 ```bash
 ./gradlew runClient    # on Windows: gradlew.bat runClient
 ```
+
+## Testing
+
+The repository ships three levels of automated tests:
+
+```bash
+./gradlew test              # JUnit 5 unit tests (Mockito for mocks)
+./gradlew jacocoTestReport  # HTML/XML coverage in build/reports/jacoco/test
+./gradlew gameTestServer    # boots a dev dedicated server and runs src/gameTest
+```
+
+`build` also runs the tests and the JaCoCo coverage floor. The in-game test mod lives in
+`src/gameTest/java` and is only added to a run classpath when `-PgameTest` or
+`gameTestServer` is used, so it never reaches the published jar. It requires
+`run/server/eula.txt` (the dev run directory already has one) and exits with status 0
+only after every assertion passes.
+
+The CI workflows are `.github/workflows/build-and-test.yml` (build, unit tests,
+coverage verification) and `.github/workflows/game-test.yml` (coverage artifact and
+the in-game assertions).
 
 ## Contributing
 

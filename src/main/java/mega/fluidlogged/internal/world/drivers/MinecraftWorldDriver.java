@@ -76,7 +76,9 @@ public class MinecraftWorldDriver implements WorldDriver {
 
     @Override
     public boolean canBeFluidLogged(@NotNull Block block, int meta, @NotNull Fluid fluid) {
-        if (block.isOpaqueCube()) return false;
+        // On a dedicated server BlockLeaves.isOpaqueCube() is true (it follows the client graphics
+        // level), but leaves are still meant to hold water.
+        if (block.isOpaqueCube() && !(block instanceof BlockLeaves)) return false;
 
         val temp = fluid.getTemperature();
         if (temp >= 373) {
