@@ -46,6 +46,8 @@ public enum Mixin implements IMixin {
     common_S23PacketBlockChangeMixin(Side.COMMON, always(), "S23PacketBlockChangeMixin"),
     common_WorldMixin(Side.COMMON, always(), "WorldMixin"),
     common_WorldServerMixin(Side.COMMON, always(), "WorldServerMixin"),
+    common_accessor_AccessorBlockDynamicLiquid(Side.COMMON, always(), "accessor.AccessorBlockDynamicLiquid"),
+    common_accessor_AccessorBlockLiquid(Side.COMMON, always(), "accessor.AccessorBlockLiquid"),
 
     client_ActiveRenderInfoMixin(Side.CLIENT, always(), "ActiveRenderInfoMixin"),
     client_AngelicaChunkBuilderMeshingTaskMixin(Side.CLIENT, require(TargetedMod.ANGELICA_2_2_40), "AngelicaChunkBuilderMeshingTaskMixin"),

@@ -106,13 +106,28 @@ final class ServerGameTests {
     }
 
     private static void checkFlow(WorldServer world) {
+        // Top stairs have an open underside, so the stored water can flow down.
+        world.setBlock(X, Y, Z, Blocks.oak_stairs, 4, 3);
+        ((FLBlockAccess) world).fl$setFluid(X, Y, Z, FluidRegistry.WATER);
         world.setBlock(X, Y - 1, Z, Blocks.air, 0, 3);
-        Fluid water = FluidRegistry.WATER;
-        FLUtil.simulate(world, X, Y, Z, new Random(1L), water);
+        FLUtil.simulate(world, X, Y, Z, new Random(1L), FluidRegistry.WATER);
 
         Block below = world.getBlock(X, Y - 1, Z);
-        check("stored water flows down into air", below == Blocks.flowing_water || below == Blocks.water);
+        check("stored water flows through an open stair face", below == Blocks.flowing_water || below == Blocks.water);
         clearCell(world, X, Y - 1, Z);
+
+        // Bottom stairs are solid underneath, so the same tick must not flow straight down.
+        int closedX = 2;
+        int closedZ = 4;
+        world.setBlock(closedX, Y, closedZ, Blocks.stone_stairs, 0, 3);
+        ((FLBlockAccess) world).fl$setFluid(closedX, Y, closedZ, FluidRegistry.WATER);
+        world.setBlock(closedX, Y - 1, closedZ, Blocks.air, 0, 3);
+        FLUtil.simulate(world, closedX, Y, closedZ, new Random(1L), FluidRegistry.WATER);
+        check(
+            "stored water does not flow through a closed stair face",
+            world.getBlock(closedX, Y - 1, closedZ) == Blocks.air);
+        clearCell(world, closedX, Y - 1, closedZ);
+        clearCell(world, closedX, Y, closedZ);
     }
 
     private static void checkBreakLeavesSource(WorldServer world) {

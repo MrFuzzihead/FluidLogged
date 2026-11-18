@@ -21,9 +21,7 @@ import java.util.Random;
 import java.util.function.Consumer;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockDynamicLiquid;
 import net.minecraft.block.BlockLiquid;
-import net.minecraft.block.BlockStaticLiquid;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
@@ -33,7 +31,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.FillBucketEvent;
-import net.minecraftforge.fluids.BlockFluidClassic;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
@@ -44,6 +41,7 @@ import org.jetbrains.annotations.Nullable;
 import cpw.mods.fml.common.eventhandler.Event;
 import lombok.val;
 import mega.fluidlogged.api.FLBlockAccess;
+import mega.fluidlogged.internal.flow.FLFlow;
 import mega.fluidlogged.internal.mixin.hook.FLWorld;
 
 public class FLUtil {
@@ -131,29 +129,7 @@ public class FLUtil {
     }
 
     public static void simulate(@NotNull World world, int x, int y, int z, @NotNull Random random, Fluid fluid) {
-        val block = fluid.getBlock();
-        if (block == null) return;
-        if (block instanceof BlockLiquid) {
-            val simBlock = resolveVanillaSimulationLiquid(block);
-            if (simBlock != null) {
-                simBlock.updateTick(world, x, y, z, random);
-            }
-        } else if (block instanceof BlockFluidClassic) {
-            block.updateTick(world, x, y, z, random);
-        }
-    }
-
-    private static @Nullable BlockDynamicLiquid resolveVanillaSimulationLiquid(Block block) {
-        if (block instanceof BlockDynamicLiquid) {
-            return (BlockDynamicLiquid) block;
-        }
-        if (block instanceof BlockStaticLiquid) {
-            val dynamic = Block.getBlockById(Block.getIdFromBlock(block) - 1);
-            if (dynamic instanceof BlockDynamicLiquid && dynamic.getMaterial() == block.getMaterial()) {
-                return (BlockDynamicLiquid) dynamic;
-            }
-        }
-        return null;
+        FLFlow.tick(world, x, y, z, fluid);
     }
 
     public static @Nullable Fluid fromChunkBlock(@NotNull Chunk chunk, int x, int y, int z, @NotNull Block block) {

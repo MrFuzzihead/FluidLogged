@@ -18,6 +18,7 @@
 package mega.fluidlogged.internal.mixin.mixins.common;
 
 import net.minecraft.block.Block;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.fluids.Fluid;
@@ -131,11 +132,20 @@ public abstract class ChunkMixin implements FLChunk {
             fl$setFluid(x, y, z, null);
         } else {
             fl$setFluid(x, y, z, currentFluid);
+            Block fluidBlock = currentFluid.getBlock();
+            if (fluidBlock != null && chunkWorld() != null && !chunkWorld().isRemote) {
+                FLUtil.onFluidPlacedInto(chunkWorld(), x, y, z, block, fluidBlock);
+            }
         }
     }
 
     @Unique
     private Chunk fl$this() {
         return (Chunk) (Object) this;
+    }
+
+    @Unique
+    private World chunkWorld() {
+        return fl$this().worldObj;
     }
 }
