@@ -40,6 +40,7 @@
 | Minecraft Forge                                                    | 10.13.4.1614 | [Download](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.7.10.html) |
 | [ChunkAPI](https://github.com/FalsePattern/ChunkAPI)               | 0.8.4+       | Required at runtime                                                                     |
 | [FalsePatternLib](https://github.com/FalsePattern/FalsePatternLib) | 1.12.2+      | Required at runtime                                                                     |
+| [Angelica](https://github.com/GTNewHorizons/Angelica)              | 2.2.45+      | Optional; required for Celeritas rendering. Older versions are unsupported.             |
 
 ## Installation
 
@@ -47,7 +48,9 @@
 2. Download the latest **FluidLogged** jar from the [Releases](https://github.com/MrFuzzihead/FluidLogged/releases/latest) page.
 3. Download the matching 1.7.10 versions of [ChunkAPI](https://github.com/FalsePattern/ChunkAPI) and [FalsePatternLib](https://github.com/FalsePattern/FalsePatternLib).
 4. Drop the FluidLogged and dependency jars into your `.minecraft/mods` folder.
-5. Launch Minecraft using the Forge profile.
+5. If you use Angelica, use **2.2.45 or newer**; FluidLogged relies on Angelica's native
+   stored-fluid rendering there and does not ship a custom Celeritas hook.
+6. Launch Minecraft using the Forge profile.
 
 ## Downloads
 
@@ -107,8 +110,7 @@ This fork continues the original FluidLogged project while modernizing its devel
 - Added GitHub Actions build/test and release workflows
 - Enabled Spotless and Checkstyle checks as part of the build
 - Updated build configuration and dependencies for the current toolchain
-- Added optional Angelica/Celeritas renderer integration without a published runtime dependency
-- Updated the dev target to Angelica 2.2.46; 2.2.45+ uses Angelica's native stored-fluid rendering
+- Relies on Angelica 2.2.45+ native stored-fluid rendering; no custom Angelica mixins
 - Added fluid light opacity, explosion resistance, fire suppression and operator commands
 - Added name-based, versioned fluid NBT persistence with legacy block-ID migration
 - Replaced the redirect-based liquid simulation with an owned flow engine and shape-aware face rules

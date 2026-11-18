@@ -50,7 +50,6 @@ public enum Mixin implements IMixin {
     common_accessor_AccessorBlockLiquid(Side.COMMON, always(), "accessor.AccessorBlockLiquid"),
 
     client_ActiveRenderInfoMixin(Side.CLIENT, always(), "ActiveRenderInfoMixin"),
-    client_AngelicaRenderBlockMixin(Side.CLIENT, require(TargetedMod.ANGELICA_LEGACY), "AngelicaRenderBlockMixin"),
     client_BlockFluidBaseMixin(Side.CLIENT, always(), "BlockFluidBaseMixin"),
     client_BlockLiquidMixin(Side.CLIENT, always(), "BlockLiquidMixin"),
     client_RenderBlockFluidMixin(Side.CLIENT, always(), "RenderBlockFluidMixin"),

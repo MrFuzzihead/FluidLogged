@@ -29,11 +29,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum TargetedMod implements ITargetedMod {
 
-    // Angelica 2.2.45+ renders FluidLogged fluids natively in the Celeritas mesher, so the
-    // legacy renderer mixin must not run there or the stored fluid is drawn twice.
-    ANGELICA_LEGACY("Angelica 2.1-2.2.44", false,
-        name -> name.matches("angelica-2\\.1\\..*|angelica-2\\.2\\.(?:[0-9]|[1-3][0-9]|4[0-4])(?:[.-].*)?")),
-    ANGELICA_2_2_40("Angelica 2.2.40", false, name -> name.matches("angelica-2\\.2\\.40(?:[.-].*)?")),
     COFHCORE("CoFH Core", false, contains("cofhcore")),;
 
     @Getter
