@@ -14,6 +14,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import net.minecraft.world.chunk.storage.RegionFileCache;
 import net.minecraft.world.gen.ChunkProviderServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -299,6 +300,8 @@ public final class ServerGameTests {
         provider.unloadQueuedChunks();
         // AnvilChunkLoader queues writes on its IO thread; flush them before reading the chunk back.
         provider.saveExtraData();
+        // Drop cached region handles so the reload reads the flushed files rather than stale cache state.
+        RegionFileCache.clearRegionFileReferences();
         check("far chunk unloads", !provider.chunkExists(cx, cz));
 
         Chunk reloaded = provider.loadChunk(cx, cz);
