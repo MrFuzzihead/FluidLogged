@@ -24,6 +24,15 @@ dependencies {
     add("testImplementation", "org.mockito:mockito-junit-jupiter:5.24.0")
 }
 
+// Minecraft's dev metadata pulls Scala through Forge, but FluidLogged and its tests are pure Java. Some CI
+// runners cannot reach the GTNH Scala mirror, and resolving it is unnecessary for compile/test classpaths.
+configurations.matching {
+    it.name in setOf("compileClasspath", "testCompileClasspath", "testRuntimeClasspath")
+}.configureEach {
+    exclude(group = "org.scala-lang")
+    exclude(group = "org.scala-lang.plugins")
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // JaCoCo
 // ---------------------------------------------------------------------------------------------------------
