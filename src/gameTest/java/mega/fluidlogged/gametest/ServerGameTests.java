@@ -71,8 +71,8 @@ final class ServerGameTests {
         checkFireSuppression(world);
         checkNbtPersistence(world);
 
-        world.setBlockToAir(X, Y, Z);
-        world.setBlockToAir(X, Y - 1, Z);
+        clearCell(world, X, Y, Z);
+        clearCell(world, X, Y - 1, Z);
 
         System.out.println("[FLUIDLOGGED-GAMETEST] " + (checks - failures) + "/" + checks + " checks passed");
         return failures;
@@ -112,7 +112,7 @@ final class ServerGameTests {
 
         Block below = world.getBlock(X, Y - 1, Z);
         check("stored water flows down into air", below == Blocks.flowing_water || below == Blocks.water);
-        world.setBlockToAir(X, Y - 1, Z);
+        clearCell(world, X, Y - 1, Z);
     }
 
     private static void checkBreakLeavesSource(WorldServer world) {
@@ -158,8 +158,8 @@ final class ServerGameTests {
             "stored lava protects the stone stairs from the explosion",
             !explosion.affectedBlockPositions.contains(new ChunkPosition(wetX, explosionY, explosionZ)));
 
-        world.setBlockToAir(dryX, explosionY, explosionZ);
-        world.setBlockToAir(wetX, explosionY, explosionZ);
+        clearCell(world, dryX, explosionY, explosionZ);
+        clearCell(world, wetX, explosionY, explosionZ);
     }
 
     private static void checkFireSuppression(WorldServer world) {
@@ -181,8 +181,8 @@ final class ServerGameTests {
         check("dry wooden stairs can catch fire", fire.canCatchFire(world, dryX, y, z, ForgeDirection.UP));
         check("waterlogged wooden stairs cannot catch fire", !fire.canCatchFire(world, wetX, y, z, ForgeDirection.UP));
 
-        world.setBlockToAir(dryX, y, z);
-        world.setBlockToAir(wetX, y, z);
+        clearCell(world, dryX, y, z);
+        clearCell(world, wetX, y, z);
     }
 
     private static void checkNbtPersistence(WorldServer world) {
@@ -218,6 +218,11 @@ final class ServerGameTests {
         manager.readSubChunkFromNBT(chunk, legacyLoaded, legacy);
         Fluid[] legacyFluids = ((FLSubChunk) legacyLoaded).fl$getFluidLog();
         check("legacy block-id NBT still loads", legacyFluids != null && legacyFluids[0] == FluidRegistry.WATER);
+    }
+
+    private static void clearCell(WorldServer world, int x, int y, int z) {
+        ((FLBlockAccess) world).fl$setFluid(x, y, z, null);
+        world.setBlockToAir(x, y, z);
     }
 
     private static void check(String name, boolean ok) {
