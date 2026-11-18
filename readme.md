@@ -38,8 +38,8 @@
 |--------------------------------------------------------------------|--------------|-----------------------------------------------------------------------------------------|
 | Minecraft                                                          | 1.7.10       | —                                                                                       |
 | Minecraft Forge                                                    | 10.13.4.1614 | [Download](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.7.10.html) |
-| [ChunkAPI](https://github.com/FalsePattern/ChunkAPI)               | 0.6.4+       | Required at runtime                                                                     |
-| [FalsePatternLib](https://github.com/FalsePattern/FalsePatternLib) | 1.7.0+       | Required at runtime                                                                     |
+| [ChunkAPI](https://github.com/FalsePattern/ChunkAPI)               | 0.8.4+       | Required at runtime                                                                     |
+| [FalsePatternLib](https://github.com/FalsePattern/FalsePatternLib) | 1.12.2+      | Required at runtime                                                                     |
 
 ## Installation
 
@@ -108,12 +108,15 @@ This fork continues the original FluidLogged project while modernizing its devel
 - Enabled Spotless and Checkstyle checks as part of the build
 - Updated build configuration and dependencies for the current toolchain
 - Added optional Angelica/Celeritas renderer integration without a published runtime dependency
+- Added fluid light opacity, explosion resistance, fire suppression and operator commands
+- Added name-based, versioned fluid NBT persistence with legacy block-ID migration
+- Replaced the redirect-based liquid simulation with an owned flow engine and shape-aware face rules
+- Added JUnit 5 + Mockito + JaCoCo unit tests and an in-game `gameTest` mod
 
 ## Roadmap
 
 - Validate the Angelica 2.2.40 (legacy) and 2.2.45+ (native) rendering paths in a client
 - Persist pending fluid ticks across chunk load without racing Forge's chunk IO
-- Replace the redirect-based vanilla liquid simulation with an owned flow/tick engine
 - Add optional ArchaicFix light-engine compatibility
 - Raise unit-test coverage above the current 18%/20% regression floor
 - Keep OptiFine and other render-replacing mods out of scope
