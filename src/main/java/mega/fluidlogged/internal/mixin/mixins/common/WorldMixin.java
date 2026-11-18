@@ -170,8 +170,13 @@ public abstract class WorldMixin implements FLBlockAccess, FLWorld {
         val oldFluid = flChunk.fl$getFluid(x & 0xF, y, z & 0xF);
         flChunk.fl$setFluid(x & 0xF, y, z & 0xF, fluid);
         markBlockForUpdate(x, y, z);
-        if (FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid)) {
+        val lightChanged = FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid);
+        val opacityChanged = FLUtil.fluidLightOpacity(oldFluid) != FLUtil.fluidLightOpacity(fluid);
+        if (lightChanged || opacityChanged) {
             updateLightByType(EnumSkyBlock.Block, x, y, z);
+        }
+        if (opacityChanged) {
+            updateLightByType(EnumSkyBlock.Sky, x, y, z);
         }
     }
 

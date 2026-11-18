@@ -31,12 +31,18 @@ import com.falsepattern.lib.mixin.IMixin;
 class AngelicaVersionGateTest {
 
     @Test
-    void gateMatchesSupportedAngelicaVersions() {
-        Predicate<String> gate = TargetedMod.ANGELICA.getCondition();
+    void legacyGateMatchesOnlyAngelicaWithoutNativeRendering() {
+        Predicate<String> gate = TargetedMod.ANGELICA_LEGACY.getCondition();
         assertTrue(gate.test("angelica-2.1.60"));
         assertTrue(gate.test("angelica-2.2.19"));
         assertTrue(gate.test("angelica-2.2.40"));
         assertTrue(gate.test("angelica-2.2.40-dev"));
+        assertTrue(gate.test("angelica-2.2.44"));
+        assertTrue(gate.test("angelica-2.2.44-dev.jar"));
+        // 2.2.45 added native FluidLogged rendering in the Celeritas mesher
+        assertFalse(gate.test("angelica-2.2.45"));
+        assertFalse(gate.test("angelica-2.2.46"));
+        assertFalse(gate.test("angelica-2.2.400"));
         assertFalse(gate.test("angelica-2.10.0"));
         assertFalse(gate.test("angelica-2.0.0"));
         assertFalse(gate.test("angelica-3.0.0"));
@@ -71,19 +77,19 @@ class AngelicaVersionGateTest {
                 .test(Collections.singletonList(TargetedMod.ANGELICA_2_2_40)));
         assertFalse(
             mixin.getFilter()
-                .test(Collections.singletonList(TargetedMod.ANGELICA)));
+                .test(Collections.singletonList(TargetedMod.ANGELICA_LEGACY)));
         assertFalse(
             mixin.getFilter()
                 .test(Collections.emptyList()));
     }
 
     @Test
-    void rendererMixinIsClientOnlyAndRequiresAngelica() {
+    void rendererMixinIsClientOnlyAndRequiresLegacyAngelica() {
         assertEquals(IMixin.Side.CLIENT, Mixin.client_AngelicaRenderBlockMixin.getSide());
         assertEquals("AngelicaRenderBlockMixin", Mixin.client_AngelicaRenderBlockMixin.getMixin());
         assertTrue(
             Mixin.client_AngelicaRenderBlockMixin.getFilter()
-                .test(Collections.singletonList(TargetedMod.ANGELICA)));
+                .test(Collections.singletonList(TargetedMod.ANGELICA_LEGACY)));
         assertFalse(
             Mixin.client_AngelicaRenderBlockMixin.getFilter()
                 .test(Collections.emptyList()));

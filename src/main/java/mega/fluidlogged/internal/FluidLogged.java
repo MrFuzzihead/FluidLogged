@@ -23,12 +23,14 @@ import com.falsepattern.chunk.api.DataRegistry;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import mega.fluidlogged.FLConstants;
 import mega.fluidlogged.Tags;
 import mega.fluidlogged.api.bucket.BucketDriver;
 import mega.fluidlogged.api.world.WorldDriver;
 import mega.fluidlogged.internal.bucket.FLBucketDriver;
 import mega.fluidlogged.internal.bucket.drivers.ForgeBucketDriver;
+import mega.fluidlogged.internal.command.FluidLoggedCommand;
 import mega.fluidlogged.internal.world.drivers.MinecraftWorldDriver;
 
 @Mod(
@@ -45,5 +47,10 @@ public class FluidLogged {
         MinecraftForge.EVENT_BUS.register(FLBucketDriver.INSTANCE);
         BucketDriver.register(new ForgeBucketDriver());
         WorldDriver.register(new MinecraftWorldDriver());
+    }
+
+    @Mod.EventHandler
+    public void serverStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new FluidLoggedCommand());
     }
 }

@@ -81,6 +81,17 @@ public class FLUtil {
         return Math.min(15, Math.max(0, light));
     }
 
+    /**
+     * Light opacity of a fluidlogged fluid, taken from its block's static opacity. Used for the chunk height map and
+     * skylight calculations, mirroring how vanilla water dims light while a waterloggable host block does not.
+     */
+    public static int fluidLightOpacity(@Nullable Fluid fluid) {
+        if (fluid == null) return 0;
+        val block = fluid.getBlock();
+        if (block == null) return 0;
+        return Math.min(255, Math.max(0, block.getLightOpacity()));
+    }
+
     public static void fireBucketEvent(ItemStack item, World world, EntityPlayer player,
         Consumer<ItemStack> resultCallback, MovingObjectPosition pos) {
         val event = new FillBucketEvent(player, item, world, pos);

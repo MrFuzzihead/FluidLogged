@@ -30,6 +30,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+
 import lombok.val;
 import mega.fluidlogged.api.FLChunk;
 import mega.fluidlogged.internal.FLUtil;
@@ -111,6 +113,11 @@ public abstract class ChunkMixin implements FLChunk {
             }
         }
         return false;
+    }
+
+    @ModifyReturnValue(method = "func_150808_b", at = @At("RETURN"), require = 1)
+    private int fluidlogged$fluidOpacity(int original, int x, int y, int z) {
+        return Math.max(original, FLUtil.fluidLightOpacity(fl$getFluid(x, y, z)));
     }
 
     @Inject(method = "func_150807_a", at = @At("HEAD"), require = 1)

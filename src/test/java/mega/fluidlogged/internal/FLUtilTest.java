@@ -84,6 +84,24 @@ class FLUtilTest {
     }
 
     @Test
+    void fluidLightOpacityUsesTheFluidBlockOpacity() {
+        assertEquals(0, FLUtil.fluidLightOpacity(null));
+
+        Fluid fluid = new Fluid("fluidlogged_opacity_test");
+        assertEquals(0, FLUtil.fluidLightOpacity(fluid));
+
+        assertEquals(3, FLUtil.fluidLightOpacity(fluidWithOpacity("fluidlogged_opacity_3", 3)));
+        assertEquals(255, FLUtil.fluidLightOpacity(fluidWithOpacity("fluidlogged_opacity_300", 300)));
+        assertEquals(0, FLUtil.fluidLightOpacity(fluidWithOpacity("fluidlogged_opacity_negative", -1)));
+    }
+
+    private static Fluid fluidWithOpacity(String name, int opacity) {
+        Fluid fluid = new Fluid(name);
+        fluid.setBlock(new TestBlock(Material.rock).withOpacity(opacity));
+        return fluid;
+    }
+
+    @Test
     void fluidLoggedCheckMatchesTheSameFluid() {
         Fluid fluid = new Fluid("fluidlogged_match_test");
         FLBlockAccess access = new TestFLBlockAccess(fluid);
@@ -160,6 +178,7 @@ class FLUtilTest {
     private static final class TestBlock extends Block {
 
         private int lightValue;
+        private int opacity;
 
         private TestBlock(Material material) {
             super(material);
@@ -170,9 +189,19 @@ class FLUtilTest {
             return this;
         }
 
+        private TestBlock withOpacity(int opacity) {
+            this.opacity = opacity;
+            return this;
+        }
+
         @Override
         public int getLightValue() {
             return lightValue;
+        }
+
+        @Override
+        public int getLightOpacity() {
+            return opacity;
         }
     }
 }
