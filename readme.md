@@ -111,9 +111,11 @@ This fork continues the original FluidLogged project while modernizing its devel
 
 ## Roadmap
 
-- Correct light propagation
-- Add blast-resistance behavior
-- Validate Angelica/Celeritas and Iris rendering
+- Validate the Angelica 2.2.40 (legacy) and 2.2.45+ (native) rendering paths in a client
+- Persist pending fluid ticks across chunk load without racing Forge's chunk IO
+- Replace the redirect-based vanilla liquid simulation with an owned flow/tick engine
+- Add optional ArchaicFix light-engine compatibility
+- Raise unit-test coverage above the current 18%/20% regression floor
 - Keep OptiFine and other render-replacing mods out of scope
 
 ## Credits
