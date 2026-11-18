@@ -21,7 +21,9 @@ import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import mega.fluidlogged.api.FLBlockAccess;
+import mega.fluidlogged.api.event.FluidLogEvent;
 import mega.fluidlogged.api.world.WorldDriver;
 import mega.fluidlogged.internal.FLManager;
 import mega.fluidlogged.internal.FLUtil;
@@ -37,7 +39,7 @@ import mega.fluidlogged.internal.mixin.hook.FLWorld;
  * log and the process exit code agree.
  * </p>
  */
-final class ServerGameTests {
+public final class ServerGameTests {
 
     private static final String FAIL = "[FLUIDLOGGED-GAMETEST] FAIL ";
     private static final String PASS = "[FLUIDLOGGED-GAMETEST] ok   ";
@@ -77,6 +79,7 @@ final class ServerGameTests {
         checkNbtPersistence(world);
         checkTickStaging(world);
         checkChunkSaveReload(world);
+        checkFluidLogEvent(world);
 
         clearCell(world, X, Y, Z);
         clearCell(world, X, Y - 1, Z);
@@ -312,6 +315,42 @@ final class ServerGameTests {
 
         flWorld.fl$getPendingFluidUpdates(reloaded, true);
         clearCell(world, x, Y, z);
+    }
+
+    private static void checkFluidLogEvent(WorldServer world) {
+        int x = 4;
+        int z = 8;
+        world.setBlock(x, Y, z, Blocks.stone_stairs, 0, 3);
+        FLBlockAccess access = (FLBlockAccess) world;
+        access.fl$setFluid(x, Y, z, null);
+
+        CancelFluidLogHandler handler = new CancelFluidLogHandler();
+        MinecraftForge.EVENT_BUS.register(handler);
+        try {
+            access.fl$setFluid(x, Y, z, FluidRegistry.WATER);
+        } finally {
+            MinecraftForge.EVENT_BUS.unregister(handler);
+        }
+
+        check("cancelled FluidLogEvent keeps the cell empty", access.fl$getFluid(x, Y, z) == null);
+        check(
+            "FluidLogEvent exposes the old and new fluid",
+            handler.last != null && handler.last.oldFluid == null && handler.last.newFluid == FluidRegistry.WATER);
+
+        access.fl$setFluid(x, Y, z, FluidRegistry.WATER);
+        check("uncancelled FluidLogEvent stores the fluid", access.fl$getFluid(x, Y, z) == FluidRegistry.WATER);
+        clearCell(world, x, Y, z);
+    }
+
+    public static final class CancelFluidLogHandler {
+
+        FluidLogEvent last;
+
+        @SubscribeEvent
+        public void onFluidLog(FluidLogEvent event) {
+            last = event;
+            event.setCanceled(true);
+        }
     }
 
     private static void clearCell(WorldServer world, int x, int y, int z) {

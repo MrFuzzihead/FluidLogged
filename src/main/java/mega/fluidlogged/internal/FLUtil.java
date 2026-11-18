@@ -26,6 +26,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -88,6 +89,19 @@ public class FLUtil {
         val block = fluid.getBlock();
         if (block == null) return 0;
         return Math.min(255, Math.max(0, block.getLightOpacity()));
+    }
+
+    /** Relights a cell after its stored fluid changed, covering both emission and opacity. */
+    public static void updateFluidLight(World world, int x, int y, int z, @Nullable Fluid oldFluid,
+        @Nullable Fluid newFluid) {
+        val lightChanged = fluidLightValue(oldFluid) != fluidLightValue(newFluid);
+        val opacityChanged = fluidLightOpacity(oldFluid) != fluidLightOpacity(newFluid);
+        if (lightChanged || opacityChanged) {
+            world.updateLightByType(EnumSkyBlock.Block, x, y, z);
+        }
+        if (opacityChanged) {
+            world.updateLightByType(EnumSkyBlock.Sky, x, y, z);
+        }
     }
 
     public static void fireBucketEvent(ItemStack item, World world, EntityPlayer player,

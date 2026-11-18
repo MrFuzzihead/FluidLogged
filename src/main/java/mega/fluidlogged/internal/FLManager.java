@@ -30,7 +30,6 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.server.S23PacketBlockChange;
-import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
@@ -426,9 +425,14 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         val oldFluid = flChunk.fl$getFluid(x, y, z);
         val fluid = ((FLPacket) packet).fl$getFluidLog();
         flChunk.fl$setFluid(x, y, z, fluid);
-        if (chunk.worldObj != null && FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid)) {
-            chunk.worldObj
-                .updateLightByType(EnumSkyBlock.Block, (chunk.xPosition << 4) + x, y, (chunk.zPosition << 4) + z);
+        if (chunk.worldObj != null) {
+            FLUtil.updateFluidLight(
+                chunk.worldObj,
+                (chunk.xPosition << 4) + x,
+                y,
+                (chunk.zPosition << 4) + z,
+                oldFluid,
+                fluid);
         }
     }
 

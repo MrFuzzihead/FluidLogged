@@ -56,7 +56,8 @@ public enum Mixin implements IMixin {
     client_RenderBlocksMixin(Side.CLIENT, always(), "RenderBlocksMixin"),
 
     //region compat
-    common_compat_cofh_ItemBucketMixin(Side.COMMON, require(TargetedMod.COFHCORE), "compat.cofh.ItemBucketMixin")
+    common_compat_cofh_ItemBucketMixin(Side.COMMON, require(TargetedMod.COFHCORE), "compat.cofh.ItemBucketMixin"),
+    common_compat_archaicfix_MixinLightingEngine(Side.COMMON, require(TargetedMod.ARCHAICFIX), "compat.archaicfix.MixinLightingEngine")
     //endregion
     ;
     // @formatter:on

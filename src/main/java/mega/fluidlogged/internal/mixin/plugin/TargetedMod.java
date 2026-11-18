@@ -29,7 +29,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum TargetedMod implements ITargetedMod {
 
-    COFHCORE("CoFH Core", false, contains("cofhcore")),;
+    COFHCORE("CoFH Core", false, contains("cofhcore")),
+    ARCHAICFIX("ArchaicFix", false, contains("archaicfix")),;
 
     @Getter
     private final String modName;

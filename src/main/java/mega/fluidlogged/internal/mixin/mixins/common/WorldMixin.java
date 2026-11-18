@@ -26,6 +26,7 @@ import net.minecraft.world.NextTickListEntry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.EmptyChunk;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.Fluid;
 
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +46,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
 import lombok.val;
 import mega.fluidlogged.api.FLBlockAccess;
 import mega.fluidlogged.api.FLChunk;
+import mega.fluidlogged.api.event.FluidLogEvent;
 import mega.fluidlogged.internal.FLUtil;
 import mega.fluidlogged.internal.mixin.hook.FLBlockRoot;
 import mega.fluidlogged.internal.mixin.hook.FLWorld;
@@ -168,16 +170,13 @@ public abstract class WorldMixin implements FLBlockAccess, FLWorld {
         if (chunk == null || chunk instanceof EmptyChunk) return;
         val flChunk = (FLChunk) chunk;
         val oldFluid = flChunk.fl$getFluid(x & 0xF, y, z & 0xF);
+        if (oldFluid == fluid) return;
+        if (MinecraftForge.EVENT_BUS.post(new FluidLogEvent((World) (Object) this, x, y, z, oldFluid, fluid))) {
+            return;
+        }
         flChunk.fl$setFluid(x & 0xF, y, z & 0xF, fluid);
         markBlockForUpdate(x, y, z);
-        val lightChanged = FLUtil.fluidLightValue(oldFluid) != FLUtil.fluidLightValue(fluid);
-        val opacityChanged = FLUtil.fluidLightOpacity(oldFluid) != FLUtil.fluidLightOpacity(fluid);
-        if (lightChanged || opacityChanged) {
-            updateLightByType(EnumSkyBlock.Block, x, y, z);
-        }
-        if (opacityChanged) {
-            updateLightByType(EnumSkyBlock.Sky, x, y, z);
-        }
+        FLUtil.updateFluidLight((World) (Object) this, x, y, z, oldFluid, fluid);
     }
 
     @Override

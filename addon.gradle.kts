@@ -73,19 +73,19 @@ tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
     sourceDirectories.setFrom(mainSourceSet.allJava.srcDirs)
     executionData.setFrom(project.files(project.layout.buildDirectory.file("jacoco/test.exec")))
 
-    // Regression guard, not a target: the first measured baseline is ~20% lines / ~24% branches.
+    // Regression guard, not a target: the suite currently covers ~38% lines / ~38% branches.
     // Raise these as tests are added instead of lowering them.
     violationRules {
         rule {
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = BigDecimal("0.18")
+                minimum = BigDecimal("0.36")
             }
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = BigDecimal("0.20")
+                minimum = BigDecimal("0.36")
             }
         }
     }
