@@ -18,9 +18,11 @@
 package mega.fluidlogged.internal.mixin.mixins.common;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -68,6 +70,9 @@ public abstract class WorldServerMixin extends World implements FLWorld {
     private TreeSet<NextTickListEntry> fl$pendingTicksSorted;
     @Unique
     private List<NextTickListEntry> fl$pendingTicksCurrentTick;
+    // Ticks read from chunk NBT wait here until ChunkEvent.Load; Forge reads NBT on its IO thread.
+    @Unique
+    private Map<Long, List<NextTickListEntry>> fl$pendingTicksStaged;
 
     public WorldServerMixin(ISaveHandler p_i45368_1_, String p_i45368_2_, WorldProvider p_i45368_3_,
         WorldSettings p_i45368_4_, Profiler p_i45368_5_) {
@@ -78,7 +83,6 @@ public abstract class WorldServerMixin extends World implements FLWorld {
     private void initialize(MinecraftServer p_i45284_1_, ISaveHandler p_i45284_2_, String p_i45284_3_, int p_i45284_4_,
         WorldSettings p_i45284_5_, Profiler p_i45284_6_, CallbackInfo ci) {
         fl$initFields();
-        fl$pendingTicksCurrentTick = new ArrayList<>();
     }
 
     @Inject(method = "initialize", at = @At("HEAD"), require = 1)
@@ -173,13 +177,21 @@ public abstract class WorldServerMixin extends World implements FLWorld {
     }
 
     @Unique
-    private void fl$initFields() {
+    private synchronized void fl$initFields() {
         if (fl$pendingTicksUnSored == null) {
             fl$pendingTicksUnSored = new HashSet<>();
         }
 
         if (fl$pendingTicksSorted == null) {
             fl$pendingTicksSorted = new TreeSet<>();
+        }
+
+        if (fl$pendingTicksCurrentTick == null) {
+            fl$pendingTicksCurrentTick = new ArrayList<>();
+        }
+
+        if (fl$pendingTicksStaged == null) {
+            fl$pendingTicksStaged = new HashMap<>();
         }
     }
 
@@ -190,6 +202,7 @@ public abstract class WorldServerMixin extends World implements FLWorld {
 
     @Override
     public void fl$scheduleFluidUpdateWithPriority(int x, int y, int z, @NotNull Block block, int delay, int priority) {
+        fl$initFields();
         val entry = new NextTickListEntry(x, y, z, block);
         // Keeping here as a note for future when it may be restored.
         // boolean isForced = getPersistentChunks().containsKey(new ChunkCoordIntPair(nextticklistentry.xCoord >> 4,
@@ -234,27 +247,44 @@ public abstract class WorldServerMixin extends World implements FLWorld {
     }
 
     @Override
-    public void fl$insertUpdate(int x, int y, int z, @NotNull Block block, int delay, int priority) {
+    public synchronized void fl$insertUpdate(int x, int y, int z, @NotNull Block block, int delay, int priority) {
+        fl$initFields();
+        if (block == null || block.getMaterial() == Material.air) {
+            return;
+        }
         val entry = new NextTickListEntry(x, y, z, block);
         entry.setPriority(priority);
-        if (block.getMaterial() != Material.air) {
-            entry.setScheduledTime((long) delay + worldInfo.getWorldTotalTime());
+        entry.setScheduledTime((long) delay + worldInfo.getWorldTotalTime());
+        // Do not touch the sorted queue from Forge's chunk IO thread.
+        fl$pendingTicksStaged.computeIfAbsent(ChunkCoordIntPair.chunkXZ2Int(x >> 4, z >> 4), key -> new ArrayList<>())
+            .add(entry);
+    }
+
+    @Override
+    public synchronized void fl$commitStagedUpdates(@NotNull Chunk chunk) {
+        fl$initFields();
+        List<NextTickListEntry> staged = fl$pendingTicksStaged
+            .remove(ChunkCoordIntPair.chunkXZ2Int(chunk.xPosition, chunk.zPosition));
+        if (staged == null) {
+            return;
         }
-        if (!fl$pendingTicksUnSored.contains(entry)) {
-            fl$pendingTicksUnSored.add(entry);
-            fl$pendingTicksSorted.add(entry);
+        for (val entry : staged) {
+            if (!fl$pendingTicksUnSored.contains(entry)) {
+                fl$pendingTicksUnSored.add(entry);
+                fl$pendingTicksSorted.add(entry);
+            }
         }
     }
 
     @Override
     public @Nullable List<@NotNull NextTickListEntry> fl$getPendingFluidUpdates(@NotNull Chunk chunk, boolean remove) {
-
+        fl$initFields();
         ArrayList<@NotNull NextTickListEntry> result = null;
         ChunkCoordIntPair chunkcoordintpair = chunk.getChunkCoordIntPair();
-        int i = (chunkcoordintpair.chunkXPos << 4) - 2;
-        int j = i + 16 + 2;
-        int k = (chunkcoordintpair.chunkZPos << 4) - 2;
-        int l = k + 16 + 2;
+        int i = chunkcoordintpair.chunkXPos << 4;
+        int j = i + 16;
+        int k = chunkcoordintpair.chunkZPos << 4;
+        int l = k + 16;
 
         for (int pass = 0; pass < 2; ++pass) {
             Iterator<NextTickListEntry> iterator;

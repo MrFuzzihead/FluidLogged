@@ -34,6 +34,9 @@ public interface FLWorld {
 
     void fl$insertUpdate(int x, int y, int z, @NotNull Block block, int delay, int priority);
 
+    /** Moves ticks read from this chunk's NBT into the active queue once the chunk is in the world. */
+    void fl$commitStagedUpdates(@NotNull Chunk chunk);
+
     @Nullable
     List<@NotNull NextTickListEntry> fl$getPendingFluidUpdates(@NotNull Chunk chunk, boolean remove);
 }

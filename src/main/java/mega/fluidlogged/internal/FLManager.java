@@ -31,9 +31,11 @@ import net.minecraft.nbt.NBTTagString;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.server.S23PacketBlockChange;
 import net.minecraft.world.EnumSkyBlock;
+import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
@@ -43,6 +45,7 @@ import org.jetbrains.annotations.Nullable;
 import com.falsepattern.chunk.api.ArrayUtil;
 import com.falsepattern.chunk.api.DataManager;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import gnu.trove.list.array.TIntArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -75,7 +78,9 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
     public void writeChunkToNBT(Chunk chunk, NBTTagCompound nbt) {
         val world = chunk.worldObj;
         val fl$world = (FLWorld) world;
-        val updates = fl$world.fl$getPendingFluidUpdates(chunk, false);
+        // On the unload save, remove the ticks we are about to write so they cannot tick in memory
+        // while the chunk is gone; the NBT copy is reloaded on the next load.
+        val updates = fl$world.fl$getPendingFluidUpdates(chunk, !chunk.isChunkLoaded);
         if (updates == null) {
             return;
         }
@@ -108,7 +113,23 @@ public class FLManager implements DataManager.PacketDataManager, DataManager.Chu
         val count = nbtList.tagCount();
         for (int i = 0; i < count; i++) {
             val entry = nbtList.func_150306_c(i);
-            fl$world.fl$insertUpdate(entry[0], entry[1], entry[2], Block.getBlockById(entry[3]), entry[4], entry[5]);
+            if (entry.length < 6) {
+                continue;
+            }
+            val block = Block.getBlockById(entry[3]);
+            if (block == null) {
+                continue;
+            }
+            fl$world.fl$insertUpdate(entry[0], entry[1], entry[2], block, entry[4], entry[5]);
+        }
+    }
+
+    /** Commits ticks read from a chunk's NBT once Forge has put the chunk into the world. */
+    @SubscribeEvent
+    public void onChunkLoad(ChunkEvent.Load event) {
+        Chunk chunk = event.getChunk();
+        if (chunk != null && chunk.worldObj instanceof WorldServer) {
+            ((FLWorld) chunk.worldObj).fl$commitStagedUpdates(chunk);
         }
     }
 

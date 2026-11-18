@@ -13,7 +13,9 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
@@ -22,6 +24,7 @@ import mega.fluidlogged.api.world.WorldDriver;
 import mega.fluidlogged.internal.FLManager;
 import mega.fluidlogged.internal.FLUtil;
 import mega.fluidlogged.internal.mixin.hook.FLSubChunk;
+import mega.fluidlogged.internal.mixin.hook.FLWorld;
 
 /**
  * In-game assertions for behaviour that cannot be tested headlessly: block registries, a live world,
@@ -70,6 +73,7 @@ final class ServerGameTests {
         checkExplosionResistance(world);
         checkFireSuppression(world);
         checkNbtPersistence(world);
+        checkTickStaging(world);
 
         clearCell(world, X, Y, Z);
         clearCell(world, X, Y - 1, Z);
@@ -233,6 +237,36 @@ final class ServerGameTests {
         manager.readSubChunkFromNBT(chunk, legacyLoaded, legacy);
         Fluid[] legacyFluids = ((FLSubChunk) legacyLoaded).fl$getFluidLog();
         check("legacy block-id NBT still loads", legacyFluids != null && legacyFluids[0] == FluidRegistry.WATER);
+    }
+
+    private static void checkTickStaging(WorldServer world) {
+        int tickX = 6;
+        int tickZ = 6;
+        Chunk chunk = world.getChunkFromBlockCoords(tickX, tickZ);
+        FLWorld flWorld = (FLWorld) world;
+
+        flWorld.fl$getPendingFluidUpdates(chunk, true);
+        world.setBlock(tickX, Y, tickZ, Blocks.stone_stairs, 0, 3);
+        ((FLBlockAccess) world).fl$setFluid(tickX, Y, tickZ, FluidRegistry.WATER);
+        flWorld.fl$scheduleFluidUpdate(tickX, Y, tickZ, Blocks.stone_stairs, 5);
+
+        NBTTagCompound nbt = new NBTTagCompound();
+        new FLManager().writeChunkToNBT(chunk, nbt);
+        check("tick NBT is written", nbt.hasKey("FluidTicks"));
+
+        flWorld.fl$getPendingFluidUpdates(chunk, true);
+        check("active tick queue is clear", flWorld.fl$getPendingFluidUpdates(chunk, false) == null);
+
+        new FLManager().readChunkFromNBT(chunk, nbt);
+        check(
+            "ticks read from NBT stay staged until chunk load",
+            flWorld.fl$getPendingFluidUpdates(chunk, false) == null);
+
+        MinecraftForge.EVENT_BUS.post(new ChunkEvent.Load(chunk));
+        check("staged ticks commit on ChunkEvent.Load", flWorld.fl$getPendingFluidUpdates(chunk, false) != null);
+
+        flWorld.fl$getPendingFluidUpdates(chunk, true);
+        clearCell(world, tickX, Y, tickZ);
     }
 
     private static void clearCell(WorldServer world, int x, int y, int z) {

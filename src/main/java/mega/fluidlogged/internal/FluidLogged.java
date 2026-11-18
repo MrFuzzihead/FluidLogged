@@ -43,7 +43,11 @@ public class FluidLogged {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-        DataRegistry.registerDataManager(new FLManager());
+        FLManager manager = new FLManager();
+        DataRegistry.registerDataManager(manager);
+        // The same manager receives ChunkEvent.Load so ticks read on the IO thread are committed on
+        // the server thread once the chunk is actually in the world.
+        MinecraftForge.EVENT_BUS.register(manager);
         MinecraftForge.EVENT_BUS.register(FLBucketDriver.INSTANCE);
         BucketDriver.register(new ForgeBucketDriver());
         WorldDriver.register(new MinecraftWorldDriver());

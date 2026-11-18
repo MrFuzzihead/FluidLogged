@@ -198,6 +198,9 @@ public abstract class WorldMixin implements FLBlockAccess, FLWorld {
     public void fl$insertUpdate(int x, int y, int z, @NotNull Block block, int delay, int priority) {}
 
     @Override
+    public void fl$commitStagedUpdates(@NotNull net.minecraft.world.chunk.Chunk chunk) {}
+
+    @Override
     public @Nullable List<NextTickListEntry> fl$getPendingFluidUpdates(@NotNull Chunk chunk, boolean remove) {
         return null;
     }
